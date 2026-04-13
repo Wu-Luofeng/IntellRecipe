@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>IntellRecipe 登录</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; }
+        .login-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 350px; }
+        .form-group { margin-bottom: 15px; }
+        input { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #009688; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #26a69a; }
+        .code-row { display: flex; gap: 10px; }
+        
+        /* 新增样式：左上角返回首页链接 */
+        .home-link { position: fixed; top: 20px; left: 20px; text-decoration: none; color: #009688; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); font-weight: bold; z-index: 1000; display: flex; align-items: center; transition: all 0.2s; }
+        .home-link:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    </style>
+</head>
+<body>
+    <!-- 新增：返回首页链接 -->
+    <a href="index.html" class="home-link">🏠 首页</a>
+
+    <div class="login-box">
+        <h2 style="text-align: center;">用户登录</h2>
+        <div class="form-group">
+            <input type="text" id="phone" placeholder="请输入手机号" value="13800138000">
+        </div>
+        <div class="form-group code-row">
+            <input type="text" id="code" placeholder="验证码">
+            <button onclick="sendCode()" style="width: 120px;">获取验证码</button>
+        </div>
+        <button onclick="login()">登录</button>
+        <div id="result" style="margin-top: 15px; color: red; text-align: center;"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api'; // 通过 Nginx 代理转发
+
+        async function sendCode() {
+            const phone = document.getElementById('phone').value;
+            if (!phone) return alert('请输入手机号');
+            
+            try {
+                const res = await fetch(`${API_BASE}/user/code?phone=${phone}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    alert('验证码已发送 (模拟环境请查看控制台或日志)');
+                } else {
+                    alert('发送失败: ' + data.errorMsg);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('请求出错，请检查网络');
+            }
+        }
+
+        async function login() {
+            const phone = document.getElementById('phone').value;
+            const code = document.getElementById('code').value;
+            
+            try {
+                const res = await fetch(`${API_BASE}/user/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, code })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('result').style.color = 'green';
+                    document.getElementById('result').innerText = '登录成功！正在跳转...';
+                    localStorage.setItem('token', data.data);
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 500);
+                } else {
+                    document.getElementById('result').style.color = 'red';
+                    document.getElementById('result').innerText = '登录失败: ' + data.errorMsg;
+                }
+            } catch (e) {
+                document.getElementById('result').innerText = '请求出错';
+            }
+        }
+    </script>
+</body>
+</html>

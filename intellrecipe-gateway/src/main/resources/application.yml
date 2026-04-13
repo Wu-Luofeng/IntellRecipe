@@ -1,0 +1,29 @@
+server:
+  port: 10010
+
+spring:
+  application:
+    name: intellrecipe-gateway
+  
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.12.128:8848
+    
+    gateway:
+      discovery:
+        locator:
+          enabled: true # 开启服务注册和发现的功能
+      routes:
+        - id: user-service
+          uri: lb://user-service # lb: load balance 负载均衡
+          predicates:
+            - Path=/user/**
+        - id: item-service
+          uri: lb://item-service
+          predicates:
+            - Path=/items/**, /search/**, /shop/**, /merchant/**, /product/**, /ingredient/**, /shop-type/**
+        - id: voucher-service
+          uri: lb://voucher-service
+          predicates:
+            - Path=/voucher/**, /seckill/**, /upload/**, /vouchers/**, /voucher-orders/**

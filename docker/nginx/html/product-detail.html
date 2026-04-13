@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品详情</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; margin: 0; padding-bottom: 80px; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; height: 50px; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
+        .back-btn { text-decoration: none; color: #333; font-size: 1.2rem; font-weight: bold; margin-right: 15px; }
+        
+        .hero-img { width: 100%; height: 300px; object-fit: cover; background: #eee; }
+        
+        .info-card { background: white; padding: 20px; margin-bottom: 10px; }
+        .price-row { display: flex; align-items: baseline; margin-bottom: 10px; }
+        .price { color: #f44336; font-size: 24px; font-weight: bold; }
+        .unit { color: #999; font-size: 14px; margin-left: 5px; }
+        .title { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .desc { color: #666; font-size: 14px; line-height: 1.6; }
+        
+        .meta-row { display: flex; justify-content: space-between; color: #999; font-size: 13px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
+        
+        .action-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: white; display: flex; align-items: center; padding: 0 20px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .buy-btn { flex: 1; background: #009688; color: white; border: none; height: 40px; border-radius: 20px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .buy-btn:active { background: #00796b; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div class="header-bar">
+        <a href="javascript:history.back()" class="back-btn">⬅</a>
+        <span style="font-weight: bold;">商品详情</span>
+    </div>
+
+    <div v-if="product">
+        <img :src="product.image || 'https://via.placeholder.com/400?text=Product'" class="hero-img" @error="handleImgError">
+        
+        <div class="info-card">
+            <div class="price-row">
+                <span class="price">¥{{ product.price }}</span>
+                <span class="unit" v-if="product.unit">/{{ product.unit }}</span>
+            </div>
+            <div class="title">{{ product.name }}</div>
+            <div class="desc">{{ product.description || '暂无详细描述' }}</div>
+            
+            <div class="meta-row">
+                <span v-if="product.weight">规格: {{ product.weight }}{{ product.unit }}</span>
+                <span>销量: 99+</span> <!-- 假数据 -->
+            </div>
+        </div>
+    </div>
+    
+    <div v-if="loading" style="text-align: center; padding: 50px; color: #999;">
+        加载中...
+    </div>
+
+    <div class="action-bar">
+        <button class="buy-btn" @click="addToCart">加入购物车</button>
+    </div>
+</div>
+
+<script>
+    axios.defaults.baseURL = '/api';
+    axios.interceptors.request.use(config => {
+        const token = localStorage.getItem('token');
+        if (token) config.headers['Authorization'] = token;
+        return config;
+    });
+
+    new Vue({
+        el: '#app',
+        data: {
+            productId: null,
+            product: null,
+            loading: false
+        },
+        created() {
+            const params = new URLSearchParams(window.location.search);
+            this.productId = params.get('id');
+            if (!this.productId) {
+                alert('参数错误');
+                history.back();
+                return;
+            }
+            this.loadData();
+        },
+        methods: {
+            handleImgError(e) {
+                e.target.src = 'https://via.placeholder.com/400?text=No+Img';
+            },
+            async loadData() {
+                this.loading = true;
+                try {
+                    const res = await axios.get('/product/detail', {
+                        params: { id: this.productId }
+                    });
+                    if (res.data.success) {
+                        this.product = res.data.data;
+                    } else {
+                        alert(res.data.errorMsg || '加载失败');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('网络异常');
+                } finally {
+                    this.loading = false;
+                }
+            },
+            addToCart() {
+                alert('购物车功能开发中...');
+            }
+        }
+    });
+</script>
+</body>
+</html>

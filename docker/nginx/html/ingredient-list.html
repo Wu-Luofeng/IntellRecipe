@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>食材大全 - 滚动加载</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; padding-top: 70px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; height: 50px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
+        .back-btn { text-decoration: none; color: #009688; font-size: 1.2rem; font-weight: bold; margin-right: 15px; display: flex; align-items: center; }
+        .page-title { font-weight: bold; font-size: 1.1rem; }
+        
+        .item-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 15px; display: flex; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .item-card:active { transform: scale(0.98); }
+        .item-img { width: 80px; height: 80px; background: #eee; border-radius: 4px; object-fit: cover; margin-right: 15px; flex-shrink: 0; }
+        .item-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .item-name { font-weight: bold; font-size: 16px; color: #333; }
+        .item-desc { color: #666; font-size: 13px; margin: 5px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .item-meta { color: #999; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .nutrition-tag { color: #009688; font-weight: bold; background: #e0f2f1; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        
+        .loading, .no-more { text-align: center; padding: 20px; color: #999; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- 顶部导航栏 -->
+    <div class="header-bar">
+        <a href="index.html" class="back-btn">⬅</a>
+        <span class="page-title">食材大全</span>
+    </div>
+
+    <!-- 搜索框区域 -->
+    <div style="margin-bottom: 15px; position: relative;">
+        <!-- 增加 @keyup.enter 明确支持回车搜索 -->
+        <input type="text" v-model="keyword" @keyup.enter="performSearch" placeholder="🔍 搜索食材 (输入后回车)" 
+               style="width: 100%; padding: 12px 40px 12px 15px; border: 1px solid #ddd; border-radius: 20px; outline: none; box-sizing: border-box; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <!-- 清空按钮 -->
+        <span v-if="keyword" @click="keyword = ''; performSearch()" 
+              style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #999; cursor: pointer; font-size: 16px;">✖</span>
+    </div>
+
+    <div class="container">
+        <div class="list-container">
+            <div v-for="item in list" :key="item.id" class="item-card">
+                <img :src="item.image || 'https://via.placeholder.com/80?text=Food'" class="item-img" alt="食材图片" @error="handleImgError">
+                <div class="item-info">
+                    <div class="item-name">{{ item.name }}</div>
+                    <div class="item-desc">{{ item.description || '暂无描述' }}</div>
+                    <div class="item-meta">
+                        <span class="nutrition-tag" v-if="item.nutritionValue">🔥 {{ item.nutritionValue }}</span>
+                        <span v-else>暂无热量数据</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="loading" class="loading">
+            <span>🔄 加载中...</span>
+        </div>
+        <div v-if="finished && list.length > 0" class="no-more">
+            <span>🏁 没有更多了</span>
+        </div>
+        <div v-if="finished && list.length === 0" class="no-more">
+            <span>😕 暂无食材数据</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 配置 axios
+    axios.defaults.baseURL = '/api';
+    
+    new Vue({
+        el: '#app',
+        data: {
+            list: [],
+            loading: false,
+            finished: false,
+            lastId: null, // 游标
+            limit: 10,
+            keyword: '', // 搜索关键词
+            isSearchMode: false // 是否处于搜索模式
+        },
+        mounted() {
+            this.loadData();
+            // 监听滚动事件
+            window.addEventListener('scroll', this.handleScroll);
+        },
+        destroyed() {
+            window.removeEventListener('scroll', this.handleScroll);
+        },
+        methods: {
+            handleImgError(e) {
+                e.target.src = 'https://via.placeholder.com/80?text=No+Img';
+            },
+            handleScroll() {
+                // 如果是搜索模式，不触发滚动加载（因为搜索目前是一次性返回所有结果）
+                if (this.isSearchMode) return;
+
+                // 滚动到底部检测
+                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                const clientHeight = document.documentElement.clientHeight;
+                const scrollHeight = document.documentElement.scrollHeight;
+                
+                // 距离底部 50px 时触发加载
+                if (scrollTop + clientHeight >= scrollHeight - 50) {
+                    this.loadData();
+                }
+            },
+            async performSearch() {
+                if (!this.keyword.trim()) {
+                    // 如果关键词为空，恢复到普通列表模式
+                    this.isSearchMode = false;
+                    this.list = [];
+                    this.lastId = null;
+                    this.finished = false;
+                    this.loadData();
+                    return;
+                }
+
+                // 进入搜索模式
+                this.isSearchMode = true;
+                this.loading = true;
+                this.list = []; // 清空现有列表
+                this.finished = true; // 搜索结果不分页，直接标记为结束
+
+                try {
+                    const res = await axios.get('/ingredient/search', {
+                        params: { key: this.keyword }
+                    });
+                    if (res.data.success) {
+                        this.list = res.data.data;
+                    } else {
+                        alert(res.data.errorMsg || '搜索失败');
+                    }
+                } catch (err) {
+                    console.error('搜索出错', err);
+                    alert('网络繁忙，请稍后重试');
+                } finally {
+                    this.loading = false;
+                }
+            },
+            async loadData() {
+                if (this.loading || this.finished || this.isSearchMode) return;
+                
+                this.loading = true;
+                try {
+                    const params = { limit: this.limit };
+                    if (this.lastId) {
+                        params.lastId = this.lastId;
+                    }
+
+                    // 调用食材列表接口
+                    const res = await axios.get('/ingredient/list', { params });
+                    
+                    if (res.data.success) {
+                        const result = res.data.data;
+                        const newList = result.list || [];
+                        
+                        if (newList.length > 0) {
+                            this.list = this.list.concat(newList);
+                            // 更新游标 (后端返回的 minTime 即为本页最后一条数据的 ID)
+                            this.lastId = result.minTime; 
+                        } else {
+                            this.finished = true; 
+                        }
+                        
+                        // 判断是否为最后一页
+                        if (newList.length < this.limit || !result.minTime) {
+                            this.finished = true;
+                        }
+                    } else {
+                        console.error('加载失败:', res.data.errorMsg);
+                    }
+                } catch (err) {
+                    console.error('请求出错:', err);
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    })
+</script>
+</body>
+</html>

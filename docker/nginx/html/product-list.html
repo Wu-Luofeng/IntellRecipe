@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品列表</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; padding-top: 70px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; height: 50px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
+        .back-btn { text-decoration: none; color: #009688; font-size: 1.2rem; font-weight: bold; margin-right: 15px; display: flex; align-items: center; }
+        .page-title { font-weight: bold; font-size: 1.1rem; }
+        
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .product-item { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s; }
+        .product-item:active { transform: scale(0.98); }
+        .product-img { width: 100%; height: 150px; object-fit: cover; background: #eee; }
+        .product-info { padding: 10px; }
+        .product-name { font-weight: bold; font-size: 14px; margin-bottom: 5px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .product-price { color: #f44336; font-weight: bold; font-size: 16px; }
+        .product-unit { color: #999; font-size: 12px; margin-left: 2px; }
+        
+        .loading, .no-more { text-align: center; padding: 20px; color: #999; grid-column: span 2; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- 顶部导航栏 -->
+    <div class="header-bar">
+        <a href="shop-list.html" class="back-btn">⬅</a>
+        <span class="page-title">店内商品</span>
+    </div>
+
+    <div class="container">
+        <div class="product-grid">
+            <div v-for="item in list" :key="item.id" class="product-item" @click="goToDetail(item.id)">
+                <img :src="item.image || 'https://via.placeholder.com/150?text=Product'" class="product-img" @error="handleImgError">
+                <div class="product-info">
+                    <div class="product-name">{{ item.name }}</div>
+                    <div>
+                        <span class="product-price">¥{{ item.price }}</span>
+                        <span class="product-unit" v-if="item.unit">/{{ item.unit }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div v-if="loading" class="loading">
+                <span>🔄 加载中...</span>
+            </div>
+            <div v-if="finished && list.length > 0" class="no-more">
+                <span>🏁 没有更多商品了</span>
+            </div>
+            <div v-if="finished && list.length === 0" class="no-more">
+                <span>😕 商家暂无商品</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    axios.defaults.baseURL = '/api';
+    // 添加请求拦截器带上 token
+    axios.interceptors.request.use(config => {
+        const token = localStorage.getItem('token');
+        if (token) config.headers['Authorization'] = token;
+        return config;
+    });
+
+    new Vue({
+        el: '#app',
+        data: {
+            merchantId: null,
+            list: [],
+            loading: false,
+            finished: false,
+            lastId: null,
+            limit: 10
+        },
+        created() {
+            // 获取 URL 参数中的 merchantId
+            const params = new URLSearchParams(window.location.search);
+            this.merchantId = params.get('merchantId');
+            if (!this.merchantId) {
+                alert('参数错误');
+                window.location.href = 'shop-list.html';
+                return;
+            }
+        },
+        mounted() {
+            this.loadData();
+            window.addEventListener('scroll', this.handleScroll);
+        },
+        destroyed() {
+            window.removeEventListener('scroll', this.handleScroll);
+        },
+        methods: {
+            handleImgError(e) {
+                e.target.src = 'https://via.placeholder.com/150?text=No+Img';
+            },
+            goToDetail(id) {
+                window.location.href = `product-detail.html?id=${id}`;
+            },
+            handleScroll() {
+                if (this.loading || this.finished) return;
+                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                const clientHeight = document.documentElement.clientHeight;
+                const scrollHeight = document.documentElement.scrollHeight;
+                if (scrollTop + clientHeight >= scrollHeight - 50) {
+                    this.loadData();
+                }
+            },
+            async loadData() {
+                if (this.loading || this.finished) return;
+                this.loading = true;
+                try {
+                    const res = await axios.get('/product/list', {
+                        params: {
+                            merchantId: this.merchantId,
+                            limit: this.limit,
+                            lastId: this.lastId
+                        }
+                    });
+                    if (res.data.success) {
+                        const result = res.data.data;
+                        this.list = this.list.concat(result.list);
+                        this.lastId = result.minTime; // 后端 ScrollResult 的 minTime 字段其实存的是 minId
+                        if (result.list.length < this.limit) {
+                            this.finished = true;
+                        }
+                    } else {
+                        alert(res.data.errorMsg || '加载失败');
+                    }
+                } catch (err) {
+                    console.error(err);
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>
