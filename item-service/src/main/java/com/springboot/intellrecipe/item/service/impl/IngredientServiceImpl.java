@@ -11,6 +11,7 @@ import com.springboot.intellrecipe.item.service.IngredientService;
 import com.springboot.intellrecipe.common.utils.CacheClient;
 import com.springboot.intellrecipe.common.utils.RedisConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -34,10 +35,10 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
     @Resource
     private CacheClient cacheClient;
 
-    @Resource
+    @Autowired(required = false)
     private ElasticsearchRestTemplate elasticsearchRestTemplate;
 
-    @Resource
+    @Autowired(required = false)
     private IngredientRepository ingredientRepository;
 
     @Override
@@ -67,17 +68,45 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
         if (key == null || key.trim().isEmpty()) {
             return java.util.Collections.emptyList();
         }
-        // 构建查询：在 name 和 description 字段中搜索
-        NativeSearchQuery query = new NativeSearchQueryBuilder()
-                .withQuery(QueryBuilders.multiMatchQuery(key, "name", "description"))
-                .withPageable(PageRequest.of(0, 20)) // 默认返回前20条
-                .build();
 
-        SearchHits<IngredientDoc> hits = elasticsearchRestTemplate.search(query, IngredientDoc.class);
+        if (elasticsearchRestTemplate == null) {
+            return searchFromDb(key);
+        }
 
-        // 提取结果
-        return hits.getSearchHits().stream()
-                .map(hit -> hit.getContent())
+        try {
+            // 构建查询：在 name 和 description 字段中搜索
+            NativeSearchQuery query = new NativeSearchQueryBuilder()
+                    .withQuery(QueryBuilders.multiMatchQuery(key, "name", "description"))
+                    .withPageable(PageRequest.of(0, 20)) // 默认返回前20条
+                    .build();
+
+            SearchHits<IngredientDoc> hits = elasticsearchRestTemplate.search(query, IngredientDoc.class);
+
+            // 提取结果
+            return hits.getSearchHits().stream()
+                    .map(hit -> hit.getContent())
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("ES搜索异常或超时，触发MySQL兜底查询, keyword: {}", key, e);
+            
+            return searchFromDb(key);
+        }
+    }
+
+    private List<IngredientDoc> searchFromDb(String key) {
+        LambdaQueryWrapper<Ingredient> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.like(Ingredient::getName, key)
+                .or()
+                .like(Ingredient::getDescription, key)
+                .last("LIMIT 20");
+
+        List<Ingredient> dbList = list(queryWrapper);
+
+        if (dbList == null || dbList.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return dbList.stream()
+                .map(ingredient -> BeanUtil.copyProperties(ingredient, IngredientDoc.class))
                 .collect(Collectors.toList());
     }
 
@@ -95,9 +124,16 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
                 .map(ingredient -> BeanUtil.copyProperties(ingredient, IngredientDoc.class))
                 .collect(Collectors.toList());
 
-        // 3. 写入 ES
-        ingredientRepository.saveAll(docs);
-        log.info("成功同步 {} 条食材数据到 ES", docs.size());
+        if (ingredientRepository == null) {
+            log.warn("Elasticsearch 已禁用或未装配，跳过同步到 ES");
+            return;
+        }
+        try {
+            ingredientRepository.saveAll(docs);
+            log.info("成功同步 {} 条食材数据到 ES", docs.size());
+        } catch (Exception e) {
+            log.warn("ES 不可用或未启动，跳过同步。keyword 搜索仍会走 MySQL 兜底。", e);
+        }
     }
 
     private ScrollResult queryFromDb(Integer limit, Long lastId) {

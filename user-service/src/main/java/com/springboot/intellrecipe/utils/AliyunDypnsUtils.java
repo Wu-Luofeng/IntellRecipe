@@ -31,9 +31,10 @@ public class AliyunDypnsUtils {
     private String templateParamMin;
 
     /**
-     * 发送短信验证码 (使用 CommonRequest 通用接口调用 Dypnsapi)
+     * 发送短信验证码 (使用 CommonRequest 通用接口调用 Dysmsapi)
+     * 
      * @param phone 手机号
-     * @param code 验证码
+     * @param code  验证码
      * @return 是否发送成功
      */
     public boolean sendVerifyCode(String phone, String code) {
@@ -41,21 +42,21 @@ public class AliyunDypnsUtils {
         DefaultProfile profile = DefaultProfile.getProfile("cn-hangzhou", accessKeyId, accessKeySecret);
         IAcsClient client = new DefaultAcsClient(profile);
 
-        // 使用 CommonRequest 构造请求，避开特定 SDK 类缺失的问题
-        CommonRequest request = new CommonRequest(); 
+        // 使用 CommonRequest 构造请求，改为调用 Dysmsapi 短信服务
+        CommonRequest request = new CommonRequest();
         request.setSysMethod(MethodType.POST);
-        request.setSysDomain("dypnsapi.aliyuncs.com"); // 指定域名为号码认证服务
+        request.setSysDomain("dysmsapi.aliyuncs.com"); // 指定域名为短信服务
         request.setSysVersion("2017-05-25");
-        request.setSysAction("SendSmsVerifyCode"); // 指定动作为发送短信验证码
-        
-        request.putQueryParameter("PhoneNumber", phone);
+        request.setSysAction("SendSms"); // 指定动作为发送短信
+
+        request.putQueryParameter("PhoneNumbers", phone); // SendSms 接口使用的是 PhoneNumbers
         request.putQueryParameter("SignName", signName);
         request.putQueryParameter("TemplateCode", templateCode);
-        
-        // 这里的 TemplateParam 是 JSON 格式，注意 key 要与模板中的 ${code}, ${min} 对应
-        String param = String.format("{\"code\":\"%s\", \"min\":\"%s\"}", code, templateParamMin);
+
+        // 这里的 TemplateParam 是 JSON 格式，测试模板 SMS_154950909 只接收 code 参数
+        String param = String.format("{\"code\":\"%s\"}", code);
         request.putQueryParameter("TemplateParam", param);
-        
+
         // 发送请求
         try {
             CommonResponse response = client.getCommonResponse(request);

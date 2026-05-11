@@ -8,19 +8,19 @@ spring:
   # MySQL Configuration
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://192.168.12.128:3307/intell_recipe?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3307}/${MYSQL_DATABASE:intell_recipe}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
     username: ${MYSQL_USERNAME:root}
-    password: ${MYSQL_PASSWORD:}
+    password: ${MYSQL_PASSWORD:root}
     hikari:
       maximum-pool-size: 50
       connection-timeout: 30000
 
   # Redis Configuration
   redis:
-    host: 192.168.12.128
-    port: 6379
-    password: ${REDIS_PASSWORD:}
-    database: 0
+    host: ${REDIS_HOST:127.0.0.1}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:123321}
+    database: ${REDIS_DATABASE:0}
     timeout: 10000ms
     lettuce:
       pool:
@@ -31,17 +31,30 @@ spring:
 
   # RabbitMQ Configuration
   rabbitmq:
-    host: 192.168.12.128
-    port: 5672
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: /
+    host: ${RABBITMQ_HOST:127.0.0.1}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:root}
+    password: ${RABBITMQ_PASSWORD:123456}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
+    # 开启发布确认机制（Confirm机制）
+    publisher-confirm-type: correlated
+    # 开启发布退回机制（Return机制）
+    publisher-returns: true
+    template:
+      # 当路由失败时，强制退回消息给发送者，而不是静默丢弃
+      mandatory: true
+    listener:
+      simple:
+        # 开启手动 ACK，保证消费端不丢消息
+        acknowledge-mode: manual
+        # 限制每次预取 1 条消息，防止消息积压
+        prefetch: 1
 
   # Nacos Config
   cloud:
     nacos:
       discovery:
-        server-addr: 192.168.12.128:8848
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
 
 # MyBatis Plus Configuration
 mybatis-plus:
