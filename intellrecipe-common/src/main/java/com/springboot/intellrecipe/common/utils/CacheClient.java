@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.springboot.intellrecipe.common.dto.RedisData;
+import com.springboot.intellrecipe.common.dto.ScrollResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -56,7 +57,7 @@ public class CacheClient {
             // 3.不存在，直接返回null或者查询数据库并建立缓存
             // 实际上逻辑过期通常假设热点key一直在缓存里
             R r = dbFallback.get();
-            if (r != null) {
+            if (r != null && !isEmptyScrollResult(r)) {
                 this.setWithLogicalExpire(key, r, time, unit);
             }
             return r;
@@ -66,8 +67,16 @@ public class CacheClient {
         R r = JSONUtil.toBean((JSONObject) redisData.getData(), type);
         LocalDateTime expireTime = redisData.getExpireTime();
         // 4.判断是否过期
-        if(expireTime.isAfter(LocalDateTime.now())) {
-            // 5.未过期，直接返回店铺信息
+        if (expireTime.isAfter(LocalDateTime.now())) {
+            // 5.未过期；若缓存的是「空列表」ScrollResult（常见于先访问页面后导数），丢弃并回源
+            if (isEmptyScrollResult(r)) {
+                stringRedisTemplate.delete(key);
+                R fresh = dbFallback.get();
+                if (fresh != null && !isEmptyScrollResult(fresh)) {
+                    this.setWithLogicalExpire(key, fresh, time, unit);
+                }
+                return fresh != null ? fresh : r;
+            }
             return r;
         }
         // 6.已过期，需要缓存重建
@@ -80,8 +89,9 @@ public class CacheClient {
                 try {
                     // 查询数据库
                     R newR = dbFallback.get();
-                    // 重建缓存
-                    this.setWithLogicalExpire(key, newR, time, unit);
+                    if (newR != null && !isEmptyScrollResult(newR)) {
+                        this.setWithLogicalExpire(key, newR, time, unit);
+                    }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }finally {
@@ -101,5 +111,14 @@ public class CacheClient {
 
     private void unlock(String key) {
         stringRedisTemplate.delete(key);
+    }
+
+    /** 空列表不写缓存、命中时视为脏数据需回源，避免「先空库访问」挡 30 分钟无数据。 */
+    private static boolean isEmptyScrollResult(Object o) {
+        if (!(o instanceof ScrollResult)) {
+            return false;
+        }
+        ScrollResult sr = (ScrollResult) o;
+        return sr.getList() == null || sr.getList().isEmpty();
     }
 }
