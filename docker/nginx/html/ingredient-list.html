@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>食材大全 - 滚动加载</title>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- 国内访问 jsdelivr 易超时，改用 bootcdn -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/vue/2.7.16/vue.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.6.8/axios.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; padding-top: 70px; }
         .container { max-width: 600px; margin: 0 auto; }
@@ -23,6 +24,7 @@
         .nutrition-tag { color: #009688; font-weight: bold; background: #e0f2f1; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
         
         .loading, .no-more { text-align: center; padding: 20px; color: #999; }
+        .api-error { margin: 12px 0; padding: 12px; background: #ffebee; color: #c62828; border-radius: 8px; font-size: 14px; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -35,6 +37,8 @@
     </div>
 
     <!-- 搜索框区域 -->
+    <div v-if="apiError" class="api-error">{{ apiError }}</div>
+
     <div style="margin-bottom: 15px; position: relative;">
         <!-- 增加 @keyup.enter 明确支持回车搜索 -->
         <input type="text" v-model="keyword" @keyup.enter="performSearch" placeholder="🔍 搜索食材 (输入后回车)" 
@@ -72,6 +76,17 @@
 </div>
 
 <script>
+    function formatHttpErr(err, pathHint) {
+        if (!err) return '未知错误';
+        if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+            return '网络错误：无法连接 ' + pathHint + '（若在国外服务器，请检查本机能否访问该域名/CDN）';
+        }
+        const st = err.response && err.response.status;
+        const body = err.response && err.response.data;
+        const msg = (typeof body === 'object' && body && body.errorMsg) ? body.errorMsg : (err.message || '');
+        return (st ? 'HTTP ' + st + ' ' : '') + pathHint + (msg ? (' — ' + msg) : '');
+    }
+
     // 配置 axios
     axios.defaults.baseURL = '/api';
     
@@ -84,7 +99,8 @@
             lastId: null, // 游标
             limit: 10,
             keyword: '', // 搜索关键词
-            isSearchMode: false // 是否处于搜索模式
+            isSearchMode: false, // 是否处于搜索模式
+            apiError: ''
         },
         mounted() {
             this.loadData();
@@ -126,6 +142,7 @@
                 // 进入搜索模式
                 this.isSearchMode = true;
                 this.loading = true;
+                this.apiError = '';
                 this.list = []; // 清空现有列表
                 this.finished = true; // 搜索结果不分页，直接标记为结束
 
@@ -140,7 +157,8 @@
                     }
                 } catch (err) {
                     console.error('搜索出错', err);
-                    alert('网络繁忙，请稍后重试');
+                    this.apiError = formatHttpErr(err, '/api/ingredient/search');
+                    alert(this.apiError || '网络繁忙，请稍后重试');
                 } finally {
                     this.loading = false;
                 }
@@ -149,6 +167,7 @@
                 if (this.loading || this.finished || this.isSearchMode) return;
                 
                 this.loading = true;
+                this.apiError = '';
                 try {
                     const params = { limit: this.limit };
                     if (this.lastId) {
@@ -175,10 +194,12 @@
                             this.finished = true;
                         }
                     } else {
+                        this.apiError = '业务错误: ' + (res.data.errorMsg || 'unknown');
                         console.error('加载失败:', res.data.errorMsg);
                     }
                 } catch (err) {
                     console.error('请求出错:', err);
+                    this.apiError = formatHttpErr(err, '/api/ingredient/list');
                 } finally {
                     this.loading = false;
                 }
