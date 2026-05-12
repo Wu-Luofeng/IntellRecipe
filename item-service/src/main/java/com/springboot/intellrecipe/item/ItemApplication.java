@@ -24,11 +24,14 @@ public class ItemApplication {
             esEnabled = "true";
         }
         if ("false".equalsIgnoreCase(esEnabled.trim())) {
+            // System property beats application.yml and fixes "elasticsearchTemplate" missing when ES is off.
+            System.setProperty("spring.data.elasticsearch.repositories.enabled", "false");
             Map<String, Object> defaults = new HashMap<>();
             defaults.put(
                     "spring.autoconfigure.exclude",
                     "org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration,"
                             + "org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration");
+            defaults.put("spring.data.elasticsearch.repositories.enabled", Boolean.FALSE);
             app.setDefaultProperties(defaults);
         }
         app.run(args);

@@ -4,7 +4,7 @@ server:
 spring:
   application:
     name: item-service
-  
+
   # MySQL Configuration
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
