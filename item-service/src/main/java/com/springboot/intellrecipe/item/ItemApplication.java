@@ -19,7 +19,10 @@ public class ItemApplication {
 
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(ItemApplication.class);
-        String esEnabled = System.getenv("ITEM_ELASTICSEARCH_ENABLED");
+        String esEnabled = System.getProperty("ITEM_ELASTICSEARCH_ENABLED");
+        if (esEnabled == null || esEnabled.isEmpty()) {
+            esEnabled = System.getenv("ITEM_ELASTICSEARCH_ENABLED");
+        }
         if (esEnabled == null) {
             esEnabled = "true";
         }

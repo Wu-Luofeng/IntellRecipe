@@ -33,7 +33,15 @@ start_service() {
     return
   fi
 
-  nohup java ${JAVA_OPTS:-} -jar "${jar}" > "${LOG_DIR}/${module}.log" 2>&1 &
+  # Command-line args beat env / application.yml. Ensures ES repos stay off when ES container is not used.
+  if [ "${module}" = "item-service" ] && [ "${ITEM_ELASTICSEARCH_ENABLED:-true}" = "false" ]; then
+    nohup java ${JAVA_OPTS:-} -jar "${jar}" \
+      --spring.data.elasticsearch.repositories.enabled=false \
+      --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration,org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration \
+      > "${LOG_DIR}/${module}.log" 2>&1 &
+  else
+    nohup java ${JAVA_OPTS:-} -jar "${jar}" > "${LOG_DIR}/${module}.log" 2>&1 &
+  fi
   echo "$!" > "${pid_file}"
   echo "Started ${module}, pid $(cat "${pid_file}"), log ${LOG_DIR}/${module}.log"
 }
