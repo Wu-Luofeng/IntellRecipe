@@ -1,3 +1,5 @@
+version: "3.3"
+
 services:
   # MySQL 5.7
   mysql:
@@ -5,8 +7,8 @@ services:
     container_name: intellrecipe-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: intell_recipe
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
       TZ: Asia/Shanghai
     ports:
       - "3307:3306" # 映射宿主机3307端口到容器3306，符合application.yml配置
@@ -26,8 +28,8 @@ services:
     volumes:
       - ./redis/data:/data
       - ./redis/conf/redis.conf:/etc/redis/redis.conf
-    # 启动命令：使用配置文件并设置密码为 123321
-    command: redis-server /etc/redis/redis.conf --requirepass 123321 --appendonly yes
+    # 启动命令：使用配置文件并设置密码
+    command: redis-server /etc/redis/redis.conf --requirepass ${REDIS_PASSWORD} --appendonly yes
 
   # Elasticsearch 7.17.24
   elasticsearch:
@@ -36,7 +38,7 @@ services:
     restart: always
     environment:
       - "discovery.type=single-node"
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=${ES_JAVA_OPTS}"
       - "TZ=Asia/Shanghai"
     ports:
       - "9200:9200"
@@ -75,8 +77,8 @@ services:
     container_name: intellrecipe-rabbitmq
     restart: always
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
       - TZ=Asia/Shanghai
     ports:
       - "5672:5672"
@@ -84,13 +86,12 @@ services:
     volumes:
       - ./rabbitmq/data:/var/lib/rabbitmq
 
-  # Nginx (可选，如果需要一起部署的话)
+  # Nginx：使用宿主机网络，直连 127.0.0.1:10010 的 Gateway，避免 Docker 访问 host.docker.internal 超时 504
   nginx:
     image: nginx:1.18.0
     container_name: intellrecipe-nginx
     restart: always
-    ports:
-      - "80:80"
+    network_mode: host
     volumes:
       - ./nginx/html:/usr/share/nginx/html
       - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf
