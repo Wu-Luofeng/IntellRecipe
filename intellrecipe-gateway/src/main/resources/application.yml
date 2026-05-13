@@ -14,6 +14,10 @@ spring:
       discovery:
         locator:
           enabled: true # 开启服务注册和发现的功能
+      # 避免下游偶发慢查询 / 冷启动时 Nginx 先 504
+      httpclient:
+        connect-timeout: 15000
+        response-timeout: 120s
       routes:
         - id: user-service
           uri: lb://user-service # lb: load balance 负载均衡

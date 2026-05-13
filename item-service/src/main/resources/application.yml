@@ -21,10 +21,10 @@ spring:
     timeout: 10000ms
     lettuce:
       pool:
-        max-active: 8
-        max-wait: -1ms
-        max-idle: 8
-        min-idle: 0
+        max-active: 32
+        max-wait: 8000ms
+        max-idle: 16
+        min-idle: 2
 
   # Elasticsearch Configuration
   elasticsearch:
