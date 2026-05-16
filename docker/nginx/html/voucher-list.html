@@ -68,18 +68,22 @@
             vouchers: []
         },
         created() {
-            this.loadVouchers(1);
+            this.loadAllVouchers([501, 502, 503]);
         },
         methods: {
-            loadVouchers(shopId) {
-                // 假设 Nginx 配置了 /api 反向代理到后端
-                axios.get(`/api/vouchers/list/${shopId}`)
-                    .then(res => {
-                        if (res.data.success) {
-                            this.vouchers = res.data.data;
+            loadAllVouchers(shopIds) {
+                const requests = shopIds.map(id =>
+                    axios.get(`/api/vouchers/list/${id}`).catch(() => ({ data: { success: false } }))
+                );
+                Promise.all(requests).then(responses => {
+                    const all = [];
+                    responses.forEach(res => {
+                        if (res.data.success && Array.isArray(res.data.data)) {
+                            all.push(...res.data.data);
                         }
-                    })
-                    .catch(err => console.error(err));
+                    });
+                    this.vouchers = all;
+                });
             },
             toDetail(id) {
                 window.location.href = `voucher-detail.html?id=${id}`;
