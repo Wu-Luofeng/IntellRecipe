@@ -40,19 +40,33 @@
         async function sendCode() {
             const phone = document.getElementById('phone').value;
             if (!phone) return alert('请输入手机号');
-            
+
             try {
                 const res = await fetch(`${API_BASE}/user/code?phone=${phone}`, { method: 'POST' });
                 const data = await res.json();
                 if (data.success) {
-                    alert('验证码已发送 (模拟环境请查看控制台或日志)');
+                    // 开发模式：后端直接返回验证码，自动填入输入框
+                    const msg = data.data || '';
+                    const devMatch = msg.match(/验证码[：:]\s*(\d{6})/);
+                    if (devMatch) {
+                        document.getElementById('code').value = devMatch[1];
+                        showResult('开发模式 — 验证码已自动填入：' + devMatch[1], 'orange');
+                    } else {
+                        showResult('验证码已发送至手机', 'green');
+                    }
                 } else {
-                    alert('发送失败: ' + data.errorMsg);
+                    showResult('发送失败: ' + data.errorMsg, 'red');
                 }
             } catch (e) {
                 console.error(e);
-                alert('请求出错，请检查网络');
+                showResult('请求出错，请检查网络', 'red');
             }
+        }
+
+        function showResult(msg, color) {
+            const el = document.getElementById('result');
+            el.style.color = color;
+            el.innerText = msg;
         }
 
         async function login() {
@@ -67,18 +81,14 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    document.getElementById('result').style.color = 'green';
-                    document.getElementById('result').innerText = '登录成功！正在跳转...';
+                    showResult('登录成功！正在跳转...', 'green');
                     localStorage.setItem('token', data.data);
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 500);
+                    setTimeout(() => { window.location.href = 'index.html'; }, 500);
                 } else {
-                    document.getElementById('result').style.color = 'red';
-                    document.getElementById('result').innerText = '登录失败: ' + data.errorMsg;
+                    showResult('登录失败: ' + data.errorMsg, 'red');
                 }
             } catch (e) {
-                document.getElementById('result').innerText = '请求出错';
+                showResult('请求出错', 'red');
             }
         }
     </script>

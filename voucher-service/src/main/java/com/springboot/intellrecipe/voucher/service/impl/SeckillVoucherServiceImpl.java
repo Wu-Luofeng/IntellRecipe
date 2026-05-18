@@ -51,32 +51,27 @@ public class SeckillVoucherServiceImpl extends ServiceImpl<SeckillVoucherMapper,
             throw new RuntimeException("秒杀已经结束！");
         }
 
-        // 2.执行 Lua 脚本进行资格校验
+        // 2. 提前生成订单ID
         Long userId = UserHolder.getUser().getId();
+        long orderId = redisIdWorker.nextId("order");
+
+        // 3. 执行 Lua 脚本进行资格校验并同时将事件写入 Redis Stream (Outbox)
         Long result = stringRedisTemplate.execute(
                 SECKILL_SCRIPT,
                 Collections.emptyList(),
                 voucherId.toString(),
-                userId.toString()
+                userId.toString(),
+                String.valueOf(orderId)
         );
 
-        // 3. 判断结果
+        // 4. 判断结果
         int r = result.intValue();
         if (r != 0) {
             throw new RuntimeException(r == 1 ? "库存不足" : "不能重复下单");
         }
 
-        // 4. 发送消息到 RabbitMQ
-        long orderId = redisIdWorker.nextId("order");
-
-        VoucherOrderDTO orderDTO = new VoucherOrderDTO();
-        orderDTO.setUserId(userId);
-        orderDTO.setVoucherId(voucherId);
-        orderDTO.setOrderId(orderId);
-        orderDTO.setType(1); // 1 代表秒杀券
-
-        rabbitTemplate.convertAndSend("voucher.direct", "seckill", orderDTO);
-
+        // 5. 校验通过并已写入 Redis Stream，不再直接发送 RabbitMQ！
+        // 后续由专门的 Dispatcher 组件从 Stream 监听，确认发往 MQ，保证可靠性。
         return orderId;
     }
 

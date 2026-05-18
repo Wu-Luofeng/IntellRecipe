@@ -6,6 +6,7 @@
 -- 1. 参数列表
 local voucherId = ARGV[1]
 local userId = ARGV[2]
+local orderId = ARGV[3]
 
 -- 2. 数据key
 -- 库存Key
@@ -29,5 +30,9 @@ redis.call('incrby', stockKey, -1)
 
 -- 3.4. 下单 (保存用户到集合)
 redis.call('sadd', orderKey, userId)
+
+-- 3.5. 发送消息到队列 (Redis Stream) 中，作为 Outbox 兜底
+-- XADD stream.orders * voucherId ? userId ? id ?
+redis.call('xadd', 'stream.orders', '*', 'userId', userId, 'voucherId', voucherId, 'id', orderId, 'type', '1')
 
 return 0 -- 成功

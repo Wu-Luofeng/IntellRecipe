@@ -40,26 +40,35 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public Result<String> sendCode(String phone) {
-        // 1.校验手机号
+        // 1. 校验手机号
         if (RegexUtils.isPhoneInvalid(phone)) {
             return Result.fail("手机号格式错误");
         }
 
-        // 2.生成验证码
-        String code = RandomUtil.randomNumbers(6);
+        String code;
 
-        // 3.保存验证码到redis
-        stringRedisTemplate.opsForValue().set(RedisConstants.LOGIN_CODE_KEY + phone, code, RedisConstants.LOGIN_CODE_TTL, TimeUnit.MINUTES);
+        // 2. 开发模式（AccessKey 未配置）：本地生成验证码，直接返回，无需真实短信
+        if (!aliyunDypnsUtils.isConfigured()) {
+            code = RandomUtil.randomNumbers(6);
+            stringRedisTemplate.opsForValue().set(
+                    RedisConstants.LOGIN_CODE_KEY + phone, code,
+                    RedisConstants.LOGIN_CODE_TTL, TimeUnit.MINUTES);
+            log.warn("[DEV MODE] AccessKey 未配置，验证码不会发送至手机。phone={}, code={}", phone, code);
+            return Result.ok("[开发模式] 验证码：" + code);
+        }
 
-        // 4.发送验证码(真实发送)
-        boolean isSent = aliyunDypnsUtils.sendVerifyCode(phone, code);
-        if (!isSent) {
-            // 如果发送失败，尝试返回错误信息，或者记录日志
-            // 这里为了用户体验，可以暂时返回成功但提示日志，或者直接报错
-            log.error("短信验证码发送失败，请检查控制台日志");
+        // 3. 生产模式：调用 DYPNS SendSmsVerifyCode，验证码由阿里云生成并下发
+        code = aliyunDypnsUtils.sendVerifyCode(phone);
+        if (code == null) {
+            log.error("短信验证码发送失败，请检查 AccessKey、赠送签名及赠送模板配置。phone={}", phone);
             return Result.fail("短信发送失败，请稍后重试");
         }
-        log.info("发送验证码 {}: {}", phone, code);
+
+        // 4. 保存阿里云返回的验证码到 Redis
+        stringRedisTemplate.opsForValue().set(
+                RedisConstants.LOGIN_CODE_KEY + phone, code,
+                RedisConstants.LOGIN_CODE_TTL, TimeUnit.MINUTES);
+        log.info("短信验证码已发送。phone={}", phone);
 
         return Result.ok("验证码发送成功");
     }

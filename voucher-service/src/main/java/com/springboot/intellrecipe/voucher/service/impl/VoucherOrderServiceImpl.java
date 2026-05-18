@@ -70,6 +70,10 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         boolean success = true;
         if (type == 1) {
             success = seckillVoucherService.deductStock(voucherId);
+            if (!success) {
+                // 抛出异常以触发MQ的消费失败（进入死信队列进行重试或人工干预）
+                throw new RuntimeException("扣减库存失败，数据库操作未生效");
+            }
         }
 
         // 2. 保存订单

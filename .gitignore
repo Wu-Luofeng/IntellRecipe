@@ -41,3 +41,6 @@ tokens.txt
 **/*.key
 **/*.jks
 **/*.keystore
+logs/
+deploy/env.sh
+deploy/pids/

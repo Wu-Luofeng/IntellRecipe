@@ -31,14 +31,18 @@ spring:
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
 
-# Aliyun SMS Config
+# 阿里云号码认证服务（DYPNS）配置
+# 接口：dypns.aliyuncs.com / SendSmsVerifyCode
+# sign-name  -> 号码认证控制台「赠送签名配置」页面的签名名称（非自定义签名）
+# template-code -> 号码认证控制台「赠送模板配置」页面的模板 CODE（数字，如 100001）
+# AccessKey 为空时自动进入开发模式：验证码直接在接口响应中返回，无需配置
 aliyun:
   sms:
     access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID:}
     access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:}
-    sign-name: ${ALIYUN_SMS_SIGN_NAME:阿里云短信测试}
-    template-code: ${ALIYUN_SMS_TEMPLATE_CODE:SMS_154950909}
-    # 验证码有效期(分钟)
+    sign-name: ${ALIYUN_SMS_SIGN_NAME:}
+    template-code: ${ALIYUN_SMS_TEMPLATE_CODE:}
+    # 验证码有效期（分钟），填入 TemplateParam 的 min 字段
     template-param-min: 5
 
 # MyBatis Plus Configuration
