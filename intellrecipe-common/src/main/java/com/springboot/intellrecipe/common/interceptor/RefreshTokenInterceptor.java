@@ -40,14 +40,17 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // 4.将查询到的Hash数据转为UserDTO对象（Hash 中数值均为 String，需显式转换 id）
-        UserDTO userDTO = BeanUtil.fillBeanWithMap(userMap, new UserDTO(), false);
+        // 4. 校验 id 字段是否合法（旧格式 token 可能没有 id，视为无效）
         Object idVal = userMap.get("id");
-        if (idVal != null && StrUtil.isNotBlank(idVal.toString())) {
-            userDTO.setId(Long.valueOf(idVal.toString()));
+        if (idVal == null || StrUtil.isBlank(idVal.toString())) {
+            // 旧 token 缺少 id 字段，主动删除避免后续误放行
+            stringRedisTemplate.delete(key);
+            return true;
         }
 
-        // 5.存在，保存用户信息到 ThreadLocal
+        // 5. 构造 UserDTO 并存入 ThreadLocal
+        UserDTO userDTO = BeanUtil.fillBeanWithMap(userMap, new UserDTO(), false);
+        userDTO.setId(Long.valueOf(idVal.toString()));
         UserHolder.saveUser(userDTO);
 
         // 6.刷新token有效期

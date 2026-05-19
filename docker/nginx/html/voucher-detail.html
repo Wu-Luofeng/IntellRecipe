@@ -79,6 +79,12 @@
                         const res = response.data;
                         if (res.success) {
                             this.orderId = res.data;
+                        } else if (res.errorMsg && res.errorMsg.includes('登录')) {
+                            // 后端返回 200 但提示未登录（旧 token 场景兜底）
+                            localStorage.removeItem('token');
+                            sessionStorage.setItem('redirectAfterLogin', window.location.href);
+                            alert('请先登录');
+                            window.location.href = 'login.html';
                         } else {
                             this.errorMsg = res.errorMsg || '抢购失败';
                         }
