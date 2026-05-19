@@ -10,7 +10,6 @@ import com.springboot.intellrecipe.voucher.mapper.VoucherOrderMapper;
 import com.springboot.intellrecipe.voucher.service.SeckillVoucherService;
 import com.springboot.intellrecipe.voucher.service.VoucherOrderService;
 import com.springboot.intellrecipe.voucher.service.VoucherService;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,9 +28,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Resource
     private RedisIdWorker redisIdWorker;
 
-    @Resource
-    private RabbitTemplate rabbitTemplate;
-
     @Override
     @Transactional
     public Long purchaseVoucher(Long voucherId) {
@@ -46,16 +42,19 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             return seckillVoucherService.seckillVoucher(voucherId);
         }
 
-        // 3. 普通券逻辑
+        // 3. 普通券逻辑：同步落库，避免 MQ 异常时接口成功但无订单
+        Long userId = UserHolder.getUser().getId();
+        if (userId == null) {
+            throw new RuntimeException("请先登录");
+        }
         long orderId = redisIdWorker.nextId("order");
         VoucherOrderDTO orderDTO = new VoucherOrderDTO();
         orderDTO.setOrderId(orderId);
-        orderDTO.setUserId(UserHolder.getUser().getId());
+        orderDTO.setUserId(userId);
         orderDTO.setVoucherId(voucherId);
         orderDTO.setType(0);
 
-        rabbitTemplate.convertAndSend("voucher.direct", "voucher", orderDTO);
-
+        createVoucherOrder(orderDTO);
         return orderId;
     }
 
@@ -65,6 +64,15 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         Long userId = voucherOrderDTO.getUserId();
         Long voucherId = voucherOrderDTO.getVoucherId();
         Integer type = voucherOrderDTO.getType();
+
+        if (userId == null) {
+            throw new RuntimeException("订单用户ID为空，请重新登录");
+        }
+
+        // 幂等：订单已存在则直接返回
+        if (getById(voucherOrderDTO.getOrderId()) != null) {
+            return;
+        }
 
         // 1. 扣减库存 (秒杀券)
         boolean success = true;

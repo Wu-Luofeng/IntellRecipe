@@ -1,7 +1,6 @@
 package com.springboot.intellrecipe.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -11,8 +10,6 @@ import com.springboot.intellrecipe.common.dto.UserLoginDTO;
 import com.springboot.intellrecipe.common.entity.User;
 import com.springboot.intellrecipe.mapper.UserMapper;
 import com.springboot.intellrecipe.service.UserService;
-import com.springboot.intellrecipe.common.utils.RedisConstants;
-import com.springboot.intellrecipe.common.utils.RedisConstants;
 import com.springboot.intellrecipe.common.utils.RedisConstants;
 import com.springboot.intellrecipe.common.utils.RegexUtils;
 import com.springboot.intellrecipe.utils.AliyunDypnsUtils;
@@ -100,23 +97,35 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             if (user == null) {
                 user = createByPhone(phone);
             }
+            if (user.getId() == null) {
+                user = lambdaQuery().eq(User::getPhone, phone).one();
+            }
+            if (user == null || user.getId() == null) {
+                log.error("用户注册或查询失败，phone={}", phone);
+                return Result.fail("用户创建失败，请稍后重试");
+            }
 
-            // 7. 生成Token (这里假设用UUID，因为JwtUtils可能也不存在或有问题)
-            // 原代码用了 JwtUtils，如果不存在会报错。为了稳妥，我们先用 UUID 生成 token
+            // 7. 登录成功后删除验证码，防止重复使用
+            stringRedisTemplate.delete(RedisConstants.LOGIN_CODE_KEY + phone);
+
+            // 8. 生成 Token 并写入 Redis（显式写入 id，避免 Hash 反序列化丢失）
             String token = UUID.randomUUID().toString(true);
-            
-            // 8. 将User对象转为Hash存储
             UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
-            Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
-                    CopyOptions.create()
-                            .setIgnoreNullValue(true)
-                            .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
-            
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("id", user.getId().toString());
+            userMap.put("phone", user.getPhone());
+            if (userDTO.getNickname() != null) {
+                userMap.put("nickname", userDTO.getNickname());
+            }
+            if (userDTO.getIcon() != null) {
+                userMap.put("icon", userDTO.getIcon());
+            }
+
             String tokenKey = RedisConstants.LOGIN_USER_KEY + token;
             stringRedisTemplate.opsForHash().putAll(tokenKey, userMap);
             stringRedisTemplate.expire(tokenKey, RedisConstants.LOGIN_USER_TTL, TimeUnit.SECONDS);
 
-            // 9. 返回token
+            log.info("用户登录成功: userId={}, phone={}", user.getId(), phone);
             return Result.ok(token);
         } catch (Exception e) {
             log.error("登录异常", e);
@@ -128,8 +137,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User user = new User();
         user.setPhone(phone);
         user.setNickname("用户" + RandomUtil.randomString(6));
-        user.setStatus(0); // 正常状态
-        this.save(user); // MyBatisPlus 提供的保存方法
+        user.setStatus(0);
+        boolean saved = this.save(user);
+        if (!saved) {
+            throw new RuntimeException("用户保存失败");
+        }
+        log.info("新用户注册成功: userId={}, phone={}", user.getId(), phone);
         return user;
     }
 }

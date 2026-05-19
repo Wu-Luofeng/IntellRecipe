@@ -254,7 +254,26 @@ nohup java -jar target/item-service-*.jar > logs/item.log 2>&1 &
 
 ---
 
-## 十、待完成 / 优化方向
+## 十、常见问题排查
+
+### 登录成功但 `user` 表无数据
+
+1. 确认查的是 **3307** 端口、`intell_recipe` 库（与 `deploy/env.sh` 一致）。
+2. 登录后看 `logs/user-service.log` 是否有 `新用户注册成功: userId=...`。
+3. 若之前登录过，Redis 里 token 可能 **没有 userId**（旧 bug），需退出后 **重新登录** 获取新 token。
+
+### 抢购接口返回订单号但 `voucher_order` 无记录
+
+| 券类型 | 落库方式 | 排查 |
+|--------|----------|------|
+| 普通券 (type=0) | 同步写库 | 查 `user-service` / `voucher-service` 日志是否有「订单用户ID为空」 |
+| 秒杀券 (type=1) | Redis Stream → RabbitMQ → 消费者写库 | 查 `voucher-service.log` 中 `接收到订单消息`、`deductStock`；查 `tb_dead_letter`；确认 RabbitMQ 容器正常 |
+
+秒杀券 Redis 库存 key：`seckill:stock:{voucherId}`，首次下单时会从 MySQL `seckill_voucher.stock` 同步。
+
+---
+
+## 十一、待完成 / 优化方向
 
 - [ ] 图片迁移至 OSS（阿里云/腾讯云 COS/MinIO）
 - [ ] CDN 加速图片资源

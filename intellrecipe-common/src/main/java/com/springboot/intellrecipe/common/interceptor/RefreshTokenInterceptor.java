@@ -40,8 +40,12 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // 4.将查询到的Hash数据转为UserDTO对象
+        // 4.将查询到的Hash数据转为UserDTO对象（Hash 中数值均为 String，需显式转换 id）
         UserDTO userDTO = BeanUtil.fillBeanWithMap(userMap, new UserDTO(), false);
+        Object idVal = userMap.get("id");
+        if (idVal != null && StrUtil.isNotBlank(idVal.toString())) {
+            userDTO.setId(Long.valueOf(idVal.toString()));
+        }
 
         // 5.存在，保存用户信息到 ThreadLocal
         UserHolder.saveUser(userDTO);

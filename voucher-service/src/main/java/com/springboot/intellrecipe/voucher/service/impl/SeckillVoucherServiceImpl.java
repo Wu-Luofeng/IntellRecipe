@@ -3,6 +3,7 @@ package com.springboot.intellrecipe.voucher.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.springboot.intellrecipe.common.dto.VoucherOrderDTO;
 import com.springboot.intellrecipe.common.entity.SeckillVoucher;
+import com.springboot.intellrecipe.common.utils.RedisConstants;
 import com.springboot.intellrecipe.common.utils.RedisIdWorker;
 import com.springboot.intellrecipe.common.utils.UserHolder;
 import com.springboot.intellrecipe.voucher.mapper.SeckillVoucherMapper;
@@ -51,11 +52,22 @@ public class SeckillVoucherServiceImpl extends ServiceImpl<SeckillVoucherMapper,
             throw new RuntimeException("秒杀已经结束！");
         }
 
-        // 2. 提前生成订单ID
+        // 2. 校验登录用户
         Long userId = UserHolder.getUser().getId();
+        if (userId == null) {
+            throw new RuntimeException("请先登录");
+        }
+
+        // 3. 将数据库库存同步到 Redis（首次秒杀前初始化）
+        String stockKey = RedisConstants.SECKILL_STOCK_KEY + voucherId;
+        if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(stockKey))) {
+            stringRedisTemplate.opsForValue().set(stockKey, String.valueOf(voucher.getStock()));
+        }
+
+        // 4. 提前生成订单ID
         long orderId = redisIdWorker.nextId("order");
 
-        // 3. 执行 Lua 脚本进行资格校验并同时将事件写入 Redis Stream (Outbox)
+        // 5. 执行 Lua 脚本进行资格校验并同时将事件写入 Redis Stream (Outbox)
         Long result = stringRedisTemplate.execute(
                 SECKILL_SCRIPT,
                 Collections.emptyList(),
@@ -64,13 +76,13 @@ public class SeckillVoucherServiceImpl extends ServiceImpl<SeckillVoucherMapper,
                 String.valueOf(orderId)
         );
 
-        // 4. 判断结果
+        // 6. 判断结果
         int r = result.intValue();
         if (r != 0) {
             throw new RuntimeException(r == 1 ? "库存不足" : "不能重复下单");
         }
 
-        // 5. 校验通过并已写入 Redis Stream，不再直接发送 RabbitMQ！
+        // 7. 校验通过并已写入 Redis Stream，由 Dispatcher 转发至 MQ 后落库
         // 后续由专门的 Dispatcher 组件从 Stream 监听，确认发往 MQ，保证可靠性。
         return orderId;
     }
