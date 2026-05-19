@@ -83,7 +83,9 @@
                 if (data.success) {
                     showResult('登录成功！正在跳转...', 'green');
                     localStorage.setItem('token', data.data);
-                    setTimeout(() => { window.location.href = 'index.html'; }, 500);
+                    const redirect = sessionStorage.getItem('redirectAfterLogin');
+                    sessionStorage.removeItem('redirectAfterLogin');
+                    setTimeout(() => { window.location.href = redirect || 'index.html'; }, 500);
                 } else {
                     showResult('登录失败: ' + data.errorMsg, 'red');
                 }
