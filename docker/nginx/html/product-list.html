@@ -71,21 +71,20 @@
       <div class="back-btn" onclick="history.back()">
         <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
       </div>
-      <span class="page-title">{{ shopName || '商品列表' }}</span>
-      <span class="header-action" @click="location.href='voucher-list.html?shopId='+shopId">领券</span>
+      <span class="page-title">商品列表</span>
+      <span class="header-action" @click="location.href='voucher-list.html'">领券</span>
     </div>
 
     <div style="padding-top: var(--header-h)">
-      <!-- 商家头图 -->
+      <!-- 商家头图（暂无 GET /merchant/{id} 接口，使用占位） -->
       <div class="shop-hero">
-        <div v-if="!shop.images" class="shop-img-placeholder" style="width:100%;height:100%;background:linear-gradient(135deg,var(--primary-light),#fff);display:flex;align-items:center;justify-content:center;font-size:64px">🏪</div>
-        <img v-else :src="shop.images" class="shop-hero-img" :alt="shopName">
+        <div class="shop-img-placeholder" style="width:100%;height:100%;background:linear-gradient(135deg,var(--primary-light),#fff);display:flex;align-items:center;justify-content:center;font-size:64px">🏪</div>
         <div class="shop-hero-info">
-          <div class="shop-hero-name">{{ shopName }}</div>
+          <div class="shop-hero-name">精选商家</div>
           <div class="shop-hero-meta">
-            <span>★ {{ shop.score ? shop.score.toFixed(1) : '4.8' }}</span>
-            <span>月售 {{ shop.sold || 0 }} 单</span>
-            <span>人均 ¥{{ shop.avgPrice || 30 }}</span>
+            <span>★ 4.8</span>
+            <span>新鲜直达</span>
+            <span>品质保障</span>
           </div>
         </div>
       </div>
@@ -99,16 +98,15 @@
 
       <!-- 商品网格 -->
       <div class="product-grid">
-        <div v-for="p in filteredList" :key="p.id" class="product-card"
+        <div v-for="p in list" :key="p.id" class="product-card"
              @click="goDetail(p.id)">
           <div class="product-img">
-            <img v-if="p.images" :src="p.images.split(',')[0]" :alt="p.name" @error="$event.target.style.display='none'">
+            <img v-if="p.image" :src="p.image" :alt="p.name" @error="$event.target.style.display='none'">
             <span v-else>🥗</span>
           </div>
           <div class="product-body">
             <div class="product-tags">
-              <span v-if="p.isHot" class="tag tag-accent" style="font-size:11px">热销</span>
-              <span v-if="p.isNew" class="tag tag-primary" style="font-size:11px">新品</span>
+              <span v-if="p.stock != null && p.stock < 5" class="tag tag-accent" style="font-size:11px">仅剩{{p.stock}}</span>
             </div>
             <div class="product-name">{{ p.name }}</div>
             <div class="product-price-row">
@@ -119,7 +117,8 @@
         </div>
 
         <div v-if="loading" class="load-tip">加载中…</div>
-        <div v-else-if="filteredList.length===0 && !loading" class="load-tip">暂无商品</div>
+        <div v-else-if="list.length===0 && !loading" class="load-tip">暂无商品</div>
+        <div v-else-if="noMore && list.length>0" class="load-tip">— 已显示全部 —</div>
       </div>
     </div>
   </div>
@@ -132,33 +131,43 @@
     new Vue({
       el: '#app',
       data: {
-        shopId: null, shop: {}, shopName: '', list: [],
-        loading: false, activeCat: 0,
+        merchantId: null, list: [], lastId: null, limit: 20,
+        loading: false, noMore: false, activeCat: 0,
         categories: [{ id: 0, name: '全部' }, { id: 1, name: '轻食' }, { id: 2, name: '沙拉' }, { id: 3, name: '套餐' }, { id: 4, name: '饮品' }],
       },
-      computed: {
-        filteredList() { return this.activeCat ? this.list.filter(p => p.typeId === this.activeCat) : this.list; },
+      created() {
+        // 兼容旧的 shopId 参数
+        this.merchantId = Utils.getParam('merchantId') || Utils.getParam('shopId') || 1;
+        this.loadMore();
+        window.addEventListener('scroll', this.onScroll);
       },
-      async created() {
-        this.shopId = Utils.getParam('shopId') || 1;
-        await Promise.all([this.loadShop(), this.loadProducts()]);
-      },
+      beforeDestroy() { window.removeEventListener('scroll', this.onScroll); },
       methods: {
-        async loadShop() {
-          try {
-            const res = await axios.get(`/api/shop/${this.shopId}`);
-            this.shop = res.data?.data || {};
-            this.shopName = this.shop.name || '商家';
-          } catch { this.shopName = '商家'; }
-        },
-        async loadProducts() {
+        async loadMore() {
+          if (this.loading || this.noMore) return;
           this.loading = true;
           try {
-            const res = await axios.get('/api/product/list', { params: { shopId: this.shopId } });
-            this.list = res.data?.data?.records || res.data?.data || [];
-          } catch { Utils.toast('加载失败'); } finally { this.loading = false; }
+            const params = { merchantId: this.merchantId, limit: this.limit };
+            if (this.lastId) params.lastId = this.lastId;
+            const res = await axios.get('/api/product/list', { params });
+            const data = res.data?.data || {};
+            const rows = data.list || [];
+            this.list.push(...rows);
+            if (rows.length < this.limit || data.minTime == null) {
+              this.noMore = true;
+            } else {
+              this.lastId = data.minTime;
+            }
+          } catch (e) {
+            console.error(e);
+            Utils.toast('加载失败');
+          } finally { this.loading = false; }
         },
-        goDetail(id) { location.href = `product-detail.html?id=${id}&shopId=${this.shopId}`; },
+        onScroll() {
+          const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+          if (scrollHeight - scrollTop - clientHeight < 120) this.loadMore();
+        },
+        goDetail(id) { location.href = `product-detail.html?id=${id}&merchantId=${this.merchantId}`; },
         addCart(p) { Utils.toast('购物车功能开发中'); },
       }
     });

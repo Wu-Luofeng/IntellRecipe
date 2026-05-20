@@ -97,32 +97,32 @@
     <div v-for="shop in list" :key="shop.id" class="shop-card"
          @click="goDetail(shop.id)">
       <div class="shop-cover">
-        <img v-if="shop.images" :src="shop.images" class="shop-cover-img" :alt="shop.name"
+        <img v-if="firstImage(shop.images)" :src="firstImage(shop.images)" class="shop-cover-img" :alt="shop.name"
              @error="$event.target.style.display='none'">
         <span v-else class="shop-cover-placeholder">🏪</span>
-        <div v-if="shop.score && shop.score >= 4.8" class="shop-badge">精选</div>
+        <div v-if="(shop.score/10) >= 4.8" class="shop-badge">精选</div>
       </div>
       <div class="shop-body">
         <div class="shop-top">
           <div>
             <div class="shop-name">{{ shop.name }}</div>
             <div class="shop-tag-row">
-              <span v-for="t in shopTags(shop)" :key="t" class="tag tag-gray">{{ t }}</span>
+              <span v-if="shop.area" class="tag tag-gray">{{ shop.area }}</span>
             </div>
           </div>
           <div class="shop-rating">
             <span class="star">★</span>
-            <span class="score">{{ shop.score ? shop.score.toFixed(1) : '4.8' }}</span>
+            <span class="score">{{ shop.score != null ? (shop.score / 10).toFixed(1) : '—' }}</span>
           </div>
         </div>
         <div class="shop-bottom">
           <div class="shop-meta">
             <span>月售 {{ shop.sold || 0 }} 单</span>
-            <span>人均 ¥{{ shop.avgPrice || 30 }}</span>
+            <span>人均 ¥{{ shop.avgPrice || 0 }}</span>
           </div>
-          <div class="shop-distance">
+          <div class="shop-distance" v-if="shop.address">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-            {{ shop.distance || '500m' }}
+            {{ shop.address }}
           </div>
         </div>
       </div>
@@ -170,7 +170,7 @@
     new Vue({
       el: '#app',
       data: {
-        list: [], page: 1, pageSize: 12, loading: false, noMore: false,
+        list: [], lastId: null, limit: 12, loading: false, noMore: false,
         keyword: '', searchTimer: null,
         activeTag: 0, sort: 'default',
         tags: [
@@ -189,30 +189,40 @@
           if (this.loading || this.noMore) return;
           this.loading = true;
           try {
-            const params = { page: this.page, pageSize: this.pageSize, orderByAsc: 'distance' };
-            if (this.keyword) params.name = this.keyword;
-            const res = await axios.get('/api/shop/list', { params });
-            const rows = res.data?.data?.records || res.data?.data || [];
+            const params = { limit: this.limit };
+            if (this.lastId) params.lastId = this.lastId;
+            const res = await axios.get('/api/merchant/list', { params });
+            const data = res.data?.data || {};
+            let rows = data.list || [];
+            // 关键词前端过滤（后端暂无搜索接口）
+            if (this.keyword) {
+              const k = this.keyword.toLowerCase();
+              rows = rows.filter(r => (r.name || '').toLowerCase().includes(k));
+            }
             this.list.push(...rows);
-            if (rows.length < this.pageSize) this.noMore = true; else this.page++;
-          } catch { Utils.toast('加载失败'); } finally { this.loading = false; }
+            if ((data.list || []).length < this.limit || data.minTime == null) {
+              this.noMore = true;
+            } else {
+              this.lastId = data.minTime;
+            }
+          } catch (e) {
+            console.error(e);
+            Utils.toast('加载失败');
+          } finally { this.loading = false; }
         },
-        shopTags(shop) {
-          const tags = [];
-          if (shop.typeId === 1) tags.push('健身餐');
-          if (shop.isNew) tags.push('新店');
-          if (shop.score >= 4.9) tags.push('口碑佳');
-          return tags.slice(0, 2);
+        firstImage(images) {
+          if (!images) return '';
+          return images.split(',')[0].trim();
         },
         onSearch()   { clearTimeout(this.searchTimer); this.searchTimer = setTimeout(()=>this.reset(), 400); },
         switchTag(id){ this.activeTag = id; this.reset(); },
         setSort(s)   { this.sort = s; this.reset(); },
-        reset()      { this.list = []; this.page = 1; this.noMore = false; this.loadMore(); },
+        reset()      { this.list = []; this.lastId = null; this.noMore = false; this.loadMore(); },
         onScroll()   {
           const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
           if (scrollHeight - scrollTop - clientHeight < 120) this.loadMore();
         },
-        goDetail(id) { location.href = `product-list.html?shopId=${id}`; },
+        goDetail(id) { location.href = `product-list.html?merchantId=${id}`; },
       }
     });
   </script>

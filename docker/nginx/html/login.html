@@ -107,7 +107,7 @@
         const data = res.data;
         if (data.success) {
           const msg = data.data || '';
-          const devMatch = msg.match(/验证码[：:]\s*(\d{6})/);
+          const devMatch = msg.match(/验证码[：:]\s*(\d{4,6})/);
           if (devMatch) {
             document.getElementById('code').value = devMatch[1];
             showMsg('开发模式 — 验证码已自动填入：' + devMatch[1], 'success');
@@ -144,7 +144,7 @@
       const phone = document.getElementById('phone').value.trim();
       const code  = document.getElementById('code').value.trim();
       if (!phone || phone.length !== 11) { showMsg('请输入正确的手机号', 'error'); return; }
-      if (!code  || code.length  !== 6)  { showMsg('请输入6位验证码', 'error'); return; }
+      if (!code  || (code.length !== 4 && code.length !== 6)) { showMsg('请输入正确的验证码', 'error'); return; }
 
       const btn = document.getElementById('loginBtn');
       btn.disabled = true; btn.textContent = '登录中…';

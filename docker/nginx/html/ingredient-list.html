@@ -85,12 +85,15 @@
     <!-- 列表 -->
     <div class="list-wrap">
       <div v-for="item in list" :key="item.id" class="ing-item">
-        <div class="ing-thumb emoji-bg">{{ item.emoji || '🌿' }}</div>
+        <div class="ing-thumb emoji-bg">
+          <img v-if="item.image" :src="item.image" :alt="item.name" @error="$event.target.style.display='none'">
+          <span v-else>{{ item.emoji || '🌿' }}</span>
+        </div>
         <div class="ing-body">
           <div class="ing-name">{{ item.name }}</div>
           <div class="ing-desc">{{ item.description || '暂无简介' }}</div>
           <div class="ing-footer">
-            <span class="ing-kcal">{{ item.calories || '—' }} 千卡/100g</span>
+            <span class="ing-kcal">{{ item.nutritionValue || '营养信息待补充' }}</span>
             <div class="ing-tags">
               <span v-if="item.type" class="tag tag-primary">{{ item.type }}</span>
             </div>
@@ -144,7 +147,7 @@
     new Vue({
       el: '#app',
       data: {
-        list: [], page: 1, pageSize: 15, loading: false, noMore: false,
+        list: [], lastId: null, limit: 15, loading: false, noMore: false,
         keyword: '', searchTimer: null, activeCat: 0,
         categories: [
           { id: 0, name: '全部' },
@@ -164,23 +167,41 @@
           if (this.loading || this.noMore) return;
           this.loading = true;
           try {
-            const params = { page: this.page, pageSize: this.pageSize };
-            if (this.keyword) params.name = this.keyword;
-            if (this.activeCat) params.type = this.categories.find(c=>c.id===this.activeCat)?.name;
+            // 关键词搜索走独立接口（不带分页）
+            if (this.keyword) {
+              const res = await axios.get('/api/ingredient/search', { params: { key: this.keyword } });
+              const rows = (res.data?.data || []).map(r => ({ ...r, emoji: EMOJI_MAP[r.type] || '🌿' }));
+              this.list = rows;
+              this.noMore = true;
+              return;
+            }
+            // 滚动查询
+            const params = { limit: this.limit };
+            if (this.lastId) params.lastId = this.lastId;
             const res = await axios.get('/api/ingredient/list', { params });
-            const rows = res.data?.data?.records || res.data?.data || [];
-            rows.forEach(r => { r.emoji = EMOJI_MAP[r.type] || '🌿'; });
-            this.list.push(...rows);
-            if (rows.length < this.pageSize) this.noMore = true;
-            else this.page++;
-          } catch { Utils.toast('加载失败'); } finally { this.loading = false; }
+            const data = res.data?.data || {};
+            const rows = (data.list || []).map(r => ({ ...r, emoji: EMOJI_MAP[r.type] || '🌿' }));
+            // 按分类前端过滤
+            const filtered = this.activeCat
+              ? rows.filter(r => r.type === this.categories.find(c=>c.id===this.activeCat).name)
+              : rows;
+            this.list.push(...filtered);
+            if (rows.length < this.limit || data.minTime == null) {
+              this.noMore = true;
+            } else {
+              this.lastId = data.minTime;
+            }
+          } catch (e) {
+            console.error(e);
+            Utils.toast('加载失败');
+          } finally { this.loading = false; }
         },
         onSearch() {
           clearTimeout(this.searchTimer);
           this.searchTimer = setTimeout(() => this.reset(), 400);
         },
         switchCat(id) { this.activeCat = id; this.reset(); },
-        reset() { this.list = []; this.page = 1; this.noMore = false; this.loadMore(); },
+        reset() { this.list = []; this.lastId = null; this.noMore = false; this.loadMore(); },
         onScroll() {
           const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
           if (scrollHeight - scrollTop - clientHeight < 120) this.loadMore();
