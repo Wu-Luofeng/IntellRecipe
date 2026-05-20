@@ -95,6 +95,7 @@ services:
     volumes:
       - ./nginx/html:/usr/share/nginx/html
       - ./nginx/conf/nginx.conf:/etc/nginx/nginx.conf
+      - ../uploads:/usr/share/nginx/uploads
     depends_on:
       - mysql
       - redis
