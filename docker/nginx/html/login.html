@@ -1,98 +1,175 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>IntellRecipe 登录</title>
-    <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; }
-        .login-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 350px; }
-        .form-group { margin-bottom: 15px; }
-        input { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background-color: #009688; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background-color: #26a69a; }
-        .code-row { display: flex; gap: 10px; }
-        
-        /* 新增样式：左上角返回首页链接 */
-        .home-link { position: fixed; top: 20px; left: 20px; text-decoration: none; color: #009688; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); font-weight: bold; z-index: 1000; display: flex; align-items: center; transition: all 0.2s; }
-        .home-link:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>登录 - IntellRecipe</title>
+  <link rel="stylesheet" href="css/theme.css">
+  <style>
+    body { background: var(--bg-card); display: flex; flex-direction: column; min-height: 100vh; }
+    .login-wrap { flex: 1; display: flex; flex-direction: column; padding: 0 28px; justify-content: center; max-width: 480px; margin: 0 auto; width: 100%; }
+    .brand { text-align: center; margin-bottom: 44px; }
+    .brand-logo {
+      width: 72px; height: 72px; border-radius: 20px;
+      background: var(--primary); margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-logo svg { width: 40px; height: 40px; color: #fff; }
+    .brand-name { font-size: 24px; font-weight: 700; color: var(--text-main); }
+    .brand-sub  { font-size: 13px; color: var(--text-sub); margin-top: 4px; }
+    .code-row   { display: flex; gap: 10px; }
+    .code-row .input { flex: 1; }
+    .code-btn {
+      flex-shrink: 0; height: 48px; padding: 0 16px; border-radius: var(--radius-sm);
+      background: var(--primary-light); color: var(--primary); border: none;
+      font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+      transition: opacity var(--transition);
+    }
+    .code-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .msg { font-size: 13px; min-height: 20px; margin-bottom: 8px; text-align: center; }
+    .msg.success { color: var(--primary); }
+    .msg.error   { color: #EF4444; }
+    .divider-line { display: flex; align-items: center; gap: 12px; margin: 24px 0; }
+    .divider-line::before, .divider-line::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .divider-line span { font-size: 12px; color: var(--text-hint); }
+    .guest-btn {
+      width: 100%; height: 44px; border: 1.5px solid var(--border); border-radius: var(--radius-btn);
+      background: transparent; color: var(--text-sub); font-size: 14px; cursor: pointer;
+    }
+    .footer-tip { text-align: center; font-size: 12px; color: var(--text-hint); margin-top: 32px; padding-bottom: 24px; }
+    .footer-tip a { color: var(--primary); }
+  </style>
 </head>
 <body>
-    <!-- 新增：返回首页链接 -->
-    <a href="index.html" class="home-link">🏠 首页</a>
-
-    <div class="login-box">
-        <h2 style="text-align: center;">用户登录</h2>
-        <div class="form-group">
-            <input type="text" id="phone" placeholder="请输入手机号" value="13800138000">
-        </div>
-        <div class="form-group code-row">
-            <input type="text" id="code" placeholder="验证码">
-            <button onclick="sendCode()" style="width: 120px;">获取验证码</button>
-        </div>
-        <button onclick="login()">登录</button>
-        <div id="result" style="margin-top: 15px; color: red; text-align: center;"></div>
+  <div class="login-wrap">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+        </svg>
+      </div>
+      <div class="brand-name">IntellRecipe</div>
+      <div class="brand-sub">智能食谱 · 健康饮食助手</div>
     </div>
 
-    <script>
-        const API_BASE = '/api'; // 通过 Nginx 代理转发
+    <div class="field">
+      <label>手机号</label>
+      <input id="phone" class="input" type="tel" maxlength="11" placeholder="请输入手机号" value="">
+    </div>
 
-        async function sendCode() {
-            const phone = document.getElementById('phone').value;
-            if (!phone) return alert('请输入手机号');
+    <div class="field">
+      <label>验证码</label>
+      <div class="code-row">
+        <input id="code" class="input" type="text" maxlength="6" placeholder="请输入验证码">
+        <button class="code-btn" id="codeBtn" onclick="sendCode()">获取验证码</button>
+      </div>
+    </div>
 
-            try {
-                const res = await fetch(`${API_BASE}/user/code?phone=${phone}`, { method: 'POST' });
-                const data = await res.json();
-                if (data.success) {
-                    // 开发模式：后端直接返回验证码，自动填入输入框
-                    const msg = data.data || '';
-                    const devMatch = msg.match(/验证码[：:]\s*(\d{6})/);
-                    if (devMatch) {
-                        document.getElementById('code').value = devMatch[1];
-                        showResult('开发模式 — 验证码已自动填入：' + devMatch[1], 'orange');
-                    } else {
-                        showResult('验证码已发送至手机', 'green');
-                    }
-                } else {
-                    showResult('发送失败: ' + data.errorMsg, 'red');
-                }
-            } catch (e) {
-                console.error(e);
-                showResult('请求出错，请检查网络', 'red');
-            }
+    <div class="msg" id="msg"></div>
+
+    <button class="btn btn-primary btn-block" id="loginBtn" onclick="login()">登录 / 注册</button>
+
+    <div class="divider-line"><span>其他方式</span></div>
+    <button class="guest-btn" onclick="Utils.toast('第三方登录开发中', 'info')">微信一键登录（开发中）</button>
+
+    <div class="footer-tip">登录即表示同意 <a href="#">用户协议</a> 和 <a href="#">隐私政策</a></div>
+  </div>
+
+  <script src="js/axios.min.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    const API = '/api';
+    let countdown = 0, timer = null;
+
+    // 已登录则直接跳走
+    if (Utils.getToken()) {
+      const redir = sessionStorage.getItem('redirectAfterLogin');
+      sessionStorage.removeItem('redirectAfterLogin');
+      window.location.replace(redir || 'index.html');
+    }
+
+    function showMsg(text, type) {
+      const el = document.getElementById('msg');
+      el.textContent = text;
+      el.className = 'msg ' + type;
+    }
+
+    async function sendCode() {
+      const phone = document.getElementById('phone').value.trim();
+      if (!phone || phone.length !== 11) { showMsg('请输入正确的手机号', 'error'); return; }
+
+      const btn = document.getElementById('codeBtn');
+      btn.disabled = true;
+
+      try {
+        const res = await axios.post(`${API}/user/code?phone=${phone}`);
+        const data = res.data;
+        if (data.success) {
+          const msg = data.data || '';
+          const devMatch = msg.match(/验证码[：:]\s*(\d{6})/);
+          if (devMatch) {
+            document.getElementById('code').value = devMatch[1];
+            showMsg('开发模式 — 验证码已自动填入：' + devMatch[1], 'success');
+          } else {
+            showMsg('验证码已发送至手机', 'success');
+          }
+          startCountdown(btn);
+        } else {
+          showMsg(data.errorMsg || '发送失败', 'error');
+          btn.disabled = false;
         }
+      } catch {
+        showMsg('网络异常，请稍后重试', 'error');
+        btn.disabled = false;
+      }
+    }
 
-        function showResult(msg, color) {
-            const el = document.getElementById('result');
-            el.style.color = color;
-            el.innerText = msg;
+    function startCountdown(btn) {
+      countdown = 60;
+      btn.textContent = `${countdown}s 后重发`;
+      timer = setInterval(() => {
+        countdown--;
+        if (countdown <= 0) {
+          clearInterval(timer);
+          btn.disabled = false;
+          btn.textContent = '获取验证码';
+        } else {
+          btn.textContent = `${countdown}s 后重发`;
         }
+      }, 1000);
+    }
 
-        async function login() {
-            const phone = document.getElementById('phone').value;
-            const code = document.getElementById('code').value;
-            
-            try {
-                const res = await fetch(`${API_BASE}/user/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone, code })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    showResult('登录成功！正在跳转...', 'green');
-                    localStorage.setItem('token', data.data);
-                    const redirect = sessionStorage.getItem('redirectAfterLogin');
-                    sessionStorage.removeItem('redirectAfterLogin');
-                    setTimeout(() => { window.location.href = redirect || 'index.html'; }, 500);
-                } else {
-                    showResult('登录失败: ' + data.errorMsg, 'red');
-                }
-            } catch (e) {
-                showResult('请求出错', 'red');
-            }
+    async function login() {
+      const phone = document.getElementById('phone').value.trim();
+      const code  = document.getElementById('code').value.trim();
+      if (!phone || phone.length !== 11) { showMsg('请输入正确的手机号', 'error'); return; }
+      if (!code  || code.length  !== 6)  { showMsg('请输入6位验证码', 'error'); return; }
+
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true; btn.textContent = '登录中…';
+
+      try {
+        const res = await axios.post(`${API}/user/login`, { phone, code });
+        const data = res.data;
+        if (data.success) {
+          Utils.setToken(data.data);
+          showMsg('登录成功！', 'success');
+          const redir = sessionStorage.getItem('redirectAfterLogin');
+          sessionStorage.removeItem('redirectAfterLogin');
+          setTimeout(() => window.location.replace(redir || 'index.html'), 400);
+        } else {
+          showMsg(data.errorMsg || '登录失败', 'error');
+          btn.disabled = false; btn.textContent = '登录 / 注册';
         }
-    </script>
+      } catch {
+        showMsg('网络异常，请稍后重试', 'error');
+        btn.disabled = false; btn.textContent = '登录 / 注册';
+      }
+    }
+
+    // Enter 键触发登录
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  </script>
 </body>
 </html>

@@ -31,6 +31,17 @@ spring:
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
 
+  # 文件上传大小限制
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+
+# 图片上传目录（Nginx 需要同时配置 /uploads/ 静态路径）
+upload:
+  dir: ${UPLOAD_DIR:${user.home}/IntellRecipe/uploads}
+  url-prefix: ${UPLOAD_URL_PREFIX:http://localhost/uploads}
+
 # 阿里云号码认证服务（DYPNS）配置
 # 接口：dypns.aliyuncs.com / SendSmsVerifyCode
 # sign-name  -> 号码认证控制台「赠送签名配置」页面的签名名称（非自定义签名）

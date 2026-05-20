@@ -16,7 +16,7 @@
         return Promise.reject(error);
     });
 
-    // 响应拦截：统一处理 401 登录过期
+    // 响应拦截：401 时清 token 并跳转（各页面 catch 块可覆盖提示文案）
     axios.interceptors.response.use(function (response) {
         return response;
     }, function (error) {
@@ -24,9 +24,7 @@
             localStorage.removeItem('token');
             var page = window.location.pathname.split('/').pop();
             if (page !== 'login.html') {
-                // 记录当前页面，登录后可跳回
                 sessionStorage.setItem('redirectAfterLogin', window.location.href);
-                alert('登录已过期，请重新登录');
                 window.location.href = 'login.html';
             }
         }

@@ -22,7 +22,7 @@ spring:
         - id: user-service
           uri: lb://user-service # lb: load balance 负载均衡
           predicates:
-            - Path=/user/**
+            - Path=/user/**, /upload/**
         - id: item-service
           uri: lb://item-service
           predicates:
@@ -30,4 +30,4 @@ spring:
         - id: voucher-service
           uri: lb://voucher-service
           predicates:
-            - Path=/voucher/**, /seckill/**, /upload/**, /vouchers/**, /voucher-orders/**
+            - Path=/voucher/**, /seckill/**, /vouchers/**, /voucher-orders/**

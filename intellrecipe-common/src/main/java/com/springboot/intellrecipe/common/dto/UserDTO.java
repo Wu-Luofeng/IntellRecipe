@@ -2,6 +2,7 @@ package com.springboot.intellrecipe.common.dto;
 
 import lombok.Data;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Data
 public class UserDTO implements Serializable {
@@ -9,4 +10,5 @@ public class UserDTO implements Serializable {
     private String phone;
     private String nickname;
     private String icon;
+    private LocalDateTime createTime;
 }

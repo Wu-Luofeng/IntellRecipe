@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>个人中心 - IntellRecipe</title>
+  <link rel="stylesheet" href="css/theme.css">
+  <style>
+    .profile-hero {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      padding: 24px 20px 40px; color: #fff; text-align: center;
+    }
+    .avatar-wrap {
+      position: relative; width: 80px; height: 80px; margin: 0 auto 12px;
+    }
+    .avatar-wrap img {
+      width: 100%; height: 100%; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,.8); object-fit: cover;
+      background: var(--primary-dark);
+    }
+    .avatar-edit {
+      position: absolute; bottom: 0; right: 0; width: 24px; height: 24px;
+      background: #fff; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    }
+    .avatar-edit svg { width: 13px; height: 13px; color: var(--primary); }
+    .profile-name { font-size: 18px; font-weight: 700; }
+    .profile-phone { font-size: 13px; opacity: .8; margin-top: 4px; }
+
+    /* 统计行 */
+    .stats-row {
+      background: var(--bg-card); margin: -20px 16px 0;
+      border-radius: var(--radius-md); box-shadow: var(--shadow-md);
+      display: flex; overflow: hidden;
+    }
+    .stat-cell {
+      flex: 1; text-align: center; padding: 16px 8px; cursor: pointer;
+      border-right: 1px solid var(--border);
+    }
+    .stat-cell:last-child { border-right: none; }
+    .stat-cell:active { background: var(--bg); }
+    .stat-num  { font-size: 20px; font-weight: 700; color: var(--primary); }
+    .stat-lbl  { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+
+    /* 功能列表 */
+    .menu-section { margin: 20px 16px 0; border-radius: var(--radius-md); overflow: hidden; }
+    .menu-section .list-item { border-radius: 0; }
+    .menu-divider { height: 12px; }
+
+    .logout-btn {
+      margin: 20px 16px; height: 48px; width: calc(100% - 32px);
+      border: 1.5px solid #EF4444; border-radius: var(--radius-btn);
+      background: transparent; color: #EF4444;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: background var(--transition);
+    }
+    .logout-btn:active { background: #FEF2F2; }
+  </style>
+</head>
+<body class="page-body-no-header">
+
+  <!-- 英雄区 -->
+  <div class="profile-hero">
+    <div class="avatar-wrap" onclick="location.href='edit-profile.html'">
+      <img id="avatarImg" src="" alt="头像">
+      <div class="avatar-edit">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+      </div>
+    </div>
+    <div class="profile-name" id="profileName">加载中…</div>
+    <div class="profile-phone" id="profilePhone"></div>
+  </div>
+
+  <!-- 统计行 -->
+  <div class="stats-row">
+    <div class="stat-cell" onclick="Utils.toast('我的订单开发中')">
+      <div class="stat-num" id="orderCount">0</div>
+      <div class="stat-lbl">我的订单</div>
+    </div>
+    <div class="stat-cell" onclick="Utils.toast('优惠券开发中')">
+      <div class="stat-num">0</div>
+      <div class="stat-lbl">优惠券</div>
+    </div>
+    <div class="stat-cell" onclick="Utils.toast('收藏开发中')">
+      <div class="stat-num">0</div>
+      <div class="stat-lbl">收藏</div>
+    </div>
+    <div class="stat-cell" onclick="Utils.toast('积分开发中')">
+      <div class="stat-num">0</div>
+      <div class="stat-lbl">积分</div>
+    </div>
+  </div>
+
+  <!-- 菜单列表 -->
+  <div class="menu-section">
+    <div class="list-item" onclick="location.href='edit-profile.html'">
+      <div class="item-icon" style="background:var(--primary-light);color:var(--primary)">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </div>
+      <span class="item-label">编辑资料</span>
+      <span class="item-arrow">›</span>
+    </div>
+    <div class="list-item" onclick="Utils.toast('我的订单开发中')">
+      <div class="item-icon" style="background:#E8F5E9;color:#43A047">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+      </div>
+      <span class="item-label">我的订单</span>
+      <span class="item-arrow">›</span>
+    </div>
+    <div class="list-item" onclick="location.href='voucher-list.html'">
+      <div class="item-icon" style="background:var(--accent-light);color:var(--accent)">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v4c1.1 0 2 .9 2 2s-.9 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2z"/></svg>
+      </div>
+      <span class="item-label">我的优惠券</span>
+      <span class="item-arrow">›</span>
+    </div>
+  </div>
+
+  <div class="menu-divider"></div>
+
+  <div class="menu-section">
+    <div class="list-item" onclick="Utils.toast('收藏功能开发中')">
+      <div class="item-icon" style="background:#FCE4EC;color:#E91E63">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </div>
+      <span class="item-label">我的收藏</span>
+      <span class="item-arrow">›</span>
+    </div>
+    <div class="list-item" onclick="Utils.toast('消息中心开发中')">
+      <div class="item-icon" style="background:#E3F2FD;color:#1E88E5">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      </div>
+      <span class="item-label">消息中心</span>
+      <span class="item-arrow">›</span>
+    </div>
+    <div class="list-item" onclick="Utils.toast('收货地址开发中')">
+      <div class="item-icon" style="background:#F3E5F5;color:#9C27B0">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <span class="item-label">收货地址</span>
+      <span class="item-arrow">›</span>
+    </div>
+  </div>
+
+  <div class="menu-divider"></div>
+
+  <div class="menu-section">
+    <div class="list-item" onclick="Utils.toast('帮助中心开发中')">
+      <div class="item-icon" style="background:#F5F5F5;color:#757575">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+      </div>
+      <span class="item-label">帮助与反馈</span>
+      <span class="item-arrow">›</span>
+    </div>
+    <div class="list-item" onclick="Utils.toast('设置开发中')">
+      <div class="item-icon" style="background:#F5F5F5;color:#757575">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      </div>
+      <span class="item-label">设置</span>
+      <span class="item-arrow">›</span>
+    </div>
+  </div>
+
+  <div style="height: 12px;"></div>
+  <button class="logout-btn" onclick="confirmLogout()">退出登录</button>
+  <div style="height: 16px;"></div>
+
+  <!-- 底部导航 -->
+  <nav class="bottom-nav">
+    <div class="nav-item" onclick="location.href='index.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>首页</span>
+    </div>
+    <div class="nav-item" onclick="location.href='ingredient-list.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20C19 20 22 3 22 3c-1 2-8 2-8 2H14z"/></svg>
+      <span>食材</span>
+    </div>
+    <div class="nav-item" onclick="location.href='shop-list.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      <span>商家</span>
+    </div>
+    <div class="nav-item" onclick="location.href='voucher-list.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v4c1.1 0 2 .9 2 2s-.9 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2z"/></svg>
+      <span>优惠券</span>
+    </div>
+    <div class="nav-item active" onclick="location.href='profile.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span>我的</span>
+    </div>
+  </nav>
+
+  <script src="js/axios.min.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    Utils.requireLogin();
+
+    (async () => {
+      const info = await Utils.fetchUserInfo(true);
+      if (!info) return;
+      document.getElementById('avatarImg').src  = Utils.avatar(info.icon);
+      document.getElementById('profileName').textContent  = info.nickname || '未设置昵称';
+      document.getElementById('profilePhone').textContent = Utils.maskPhone(info.phone);
+    })();
+
+    function confirmLogout() {
+      if (confirm('确定要退出登录吗？')) Utils.logout();
+    }
+  </script>
+</body>
+</html>

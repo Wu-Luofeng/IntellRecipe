@@ -2,11 +2,13 @@ package com.springboot.intellrecipe.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.springboot.intellrecipe.common.dto.Result;
 import com.springboot.intellrecipe.common.dto.UserDTO;
 import com.springboot.intellrecipe.common.dto.UserLoginDTO;
+import com.springboot.intellrecipe.common.dto.UserProfileDTO;
 import com.springboot.intellrecipe.common.entity.User;
 import com.springboot.intellrecipe.mapper.UserMapper;
 import com.springboot.intellrecipe.service.UserService;
@@ -131,6 +133,45 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             log.error("登录异常", e);
             return Result.fail("登录异常");
         }
+    }
+
+    @Override
+    public Result<UserDTO> getMe(Long userId) {
+        User user = getById(userId);
+        if (user == null) {
+            return Result.fail("用户不存在");
+        }
+        UserDTO dto = BeanUtil.copyProperties(user, UserDTO.class);
+        return Result.ok(dto);
+    }
+
+    @Override
+    public Result<Void> updateProfile(Long userId, UserProfileDTO profileDTO, String token) {
+        if (StrUtil.isBlank(profileDTO.getNickname())) {
+            return Result.fail("昵称不能为空");
+        }
+        // 更新数据库
+        User user = new User();
+        user.setId(userId);
+        user.setNickname(profileDTO.getNickname());
+        if (StrUtil.isNotBlank(profileDTO.getIcon())) {
+            user.setIcon(profileDTO.getIcon());
+        }
+        updateById(user);
+
+        // 同步更新 Redis Hash，让 RefreshTokenInterceptor 立即读取到新值
+        if (StrUtil.isNotBlank(token)) {
+            String key = RedisConstants.LOGIN_USER_KEY + token;
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("nickname", profileDTO.getNickname());
+            if (StrUtil.isNotBlank(profileDTO.getIcon())) {
+                updates.put("icon", profileDTO.getIcon());
+            }
+            stringRedisTemplate.opsForHash().putAll(key, updates);
+        }
+
+        log.info("用户资料更新成功: userId={}", userId);
+        return Result.ok();
     }
 
     private User createByPhone(String phone) {

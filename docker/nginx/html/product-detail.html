@@ -1,115 +1,204 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>商品详情</title>
-    <script src="https://cdn.bootcdn.net/ajax/libs/vue/2.7.16/vue.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.6.8/axios.min.js"></script>
-    <script src="js/request.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; margin: 0; padding-bottom: 80px; }
-        .header-bar { position: fixed; top: 0; left: 0; right: 0; height: 50px; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
-        .back-btn { text-decoration: none; color: #333; font-size: 1.2rem; font-weight: bold; margin-right: 15px; }
-        
-        .hero-img { width: 100%; height: 300px; object-fit: cover; background: #eee; }
-        
-        .info-card { background: white; padding: 20px; margin-bottom: 10px; }
-        .price-row { display: flex; align-items: baseline; margin-bottom: 10px; }
-        .price { color: #f44336; font-size: 24px; font-weight: bold; }
-        .unit { color: #999; font-size: 14px; margin-left: 5px; }
-        .title { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 10px; }
-        .desc { color: #666; font-size: 14px; line-height: 1.6; }
-        
-        .meta-row { display: flex; justify-content: space-between; color: #999; font-size: 13px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
-        
-        .action-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: white; display: flex; align-items: center; padding: 0 20px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
-        .buy-btn { flex: 1; background: #009688; color: white; border: none; height: 40px; border-radius: 20px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .buy-btn:active { background: #00796b; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>商品详情 - IntellRecipe</title>
+  <link rel="stylesheet" href="css/theme.css">
+  <style>
+    /* 顶栏透明渐变 */
+    .floating-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: var(--header-h); display: flex; align-items: center;
+      padding: 0 16px; transition: background var(--transition);
+    }
+    .floating-header.scrolled { background: var(--bg-card); border-bottom: 1px solid var(--border); }
+    .floating-header .back-btn { background: rgba(255,255,255,.85); border-radius: 50%; }
+    .floating-header .page-title { color: transparent; transition: color var(--transition); }
+    .floating-header.scrolled .page-title { color: var(--text-main); }
+
+    /* 大图 */
+    .hero-img-wrap { position: relative; }
+    .hero-img {
+      width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--bg);
+      display: flex; align-items: center; justify-content: center; font-size: 80px;
+    }
+    .hero-img img { width: 100%; height: 100%; object-fit: cover; }
+    .img-dots { position: absolute; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; gap: 5px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.5); }
+    .dot.active { background: #fff; }
+
+    /* 价格区 */
+    .price-card { background: var(--bg-card); padding: 16px; margin-bottom: 8px; }
+    .price-row { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 8px; }
+    .price-main { color: var(--accent); font-size: 26px; font-weight: 900; }
+    .price-main span { font-size: 16px; }
+    .price-origin { color: var(--text-hint); font-size: 13px; text-decoration: line-through; }
+    .product-name { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .product-desc { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+    .product-tags-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+
+    /* 营养信息 */
+    .nutrition-card { background: var(--bg-card); padding: 16px; margin-bottom: 8px; }
+    .section-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+    .nut-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .nut-cell { text-align: center; background: var(--bg); border-radius: var(--radius-sm); padding: 12px 4px; }
+    .nut-val  { font-size: 16px; font-weight: 700; color: var(--primary); }
+    .nut-lbl  { font-size: 11px; color: var(--text-sub); margin-top: 3px; }
+
+    /* 食材成分 */
+    .ing-section { background: var(--bg-card); padding: 16px; margin-bottom: 8px; }
+    .ing-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ing-chip {
+      display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+      border-radius: var(--radius-btn); background: var(--bg); cursor: pointer;
+      transition: background var(--transition);
+    }
+    .ing-chip:active { background: var(--primary-light); }
+    .ing-chip-name { font-size: 13px; font-weight: 500; }
+    .ing-chip-kcal { font-size: 11px; color: var(--text-sub); }
+
+    /* 数量选择 + 加购浮层 */
+    .buy-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--bg-card); border-top: 1px solid var(--border);
+      padding: 10px 16px; display: flex; align-items: center; gap: 12px; z-index: 50;
+    }
+    .qty-ctrl { display: flex; align-items: center; gap: 0; background: var(--bg); border-radius: 20px; overflow: hidden; }
+    .qty-btn { width: 36px; height: 36px; border: none; background: transparent; font-size: 18px; cursor: pointer; color: var(--text-main); }
+    .qty-btn:active { background: var(--border); }
+    .qty-val { width: 32px; text-align: center; font-size: 16px; font-weight: 700; }
+    .cart-btn {
+      flex: 1; height: 48px; background: var(--primary); color: #fff; border: none;
+      border-radius: var(--radius-btn); font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: opacity var(--transition);
+    }
+    .cart-btn:active { opacity: .8; }
+    .fav-btn2 {
+      width: 48px; height: 48px; border-radius: 50%; background: var(--bg);
+      border: none; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; transition: background var(--transition);
+    }
+    .fav-btn2:active { background: #FCE4EC; }
+    .fav-btn2 svg { width: 22px; height: 22px; color: var(--text-hint); }
+  </style>
 </head>
 <body>
-
-<div id="app">
-    <div class="header-bar">
-        <a href="javascript:history.back()" class="back-btn">⬅</a>
-        <span style="font-weight: bold;">商品详情</span>
+  <div id="app">
+    <!-- 悬浮顶栏 -->
+    <div :class="['floating-header', scrolled?'scrolled':'']">
+      <div class="back-btn" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;margin-right:8px" onclick="history.back()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </div>
+      <span class="page-title" style="flex:1;font-size:16px;font-weight:600">{{ product.name }}</span>
+      <button style="background:rgba(255,255,255,.85);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer" @click="Utils.toast('分享功能开发中')">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11A2.99 2.99 0 0018 8c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+      </button>
     </div>
 
-    <div v-if="product">
-        <img :src="product.image || 'https://via.placeholder.com/400?text=Product'" class="hero-img" @error="handleImgError">
-        
-        <div class="info-card">
-            <div class="price-row">
-                <span class="price">¥{{ product.price }}</span>
-                <span class="unit" v-if="product.unit">/{{ product.unit }}</span>
-            </div>
-            <div class="title">{{ product.name }}</div>
-            <div class="desc">{{ product.description || '暂无详细描述' }}</div>
-            
-            <div class="meta-row">
-                <span v-if="product.weight">规格: {{ product.weight }}{{ product.unit }}</span>
-                <span>销量: 99+</span> <!-- 假数据 -->
-            </div>
+    <div v-if="product.id">
+      <!-- 大图 -->
+      <div class="hero-img-wrap">
+        <div class="hero-img">
+          <img v-if="product.images" :src="product.images.split(',')[0]" :alt="product.name" @error="$event.target.style.display='none'">
+          <span v-else>🥗</span>
         </div>
-    </div>
-    
-    <div v-if="loading" style="text-align: center; padding: 50px; color: #999;">
-        加载中...
+      </div>
+
+      <!-- 价格/名称 -->
+      <div class="price-card">
+        <div class="price-row">
+          <span class="price-main"><span>¥</span>{{ product.price }}</span>
+          <span v-if="product.originalPrice" class="price-origin">¥{{ product.originalPrice }}</span>
+          <span v-if="product.sold" style="font-size:12px;color:var(--text-hint)">月售 {{ product.sold }}</span>
+        </div>
+        <div class="product-name">{{ product.name }}</div>
+        <div v-if="product.comments" class="product-desc">{{ product.comments }}</div>
+        <div class="product-tags-row">
+          <span v-if="product.isHot" class="tag tag-accent">热销</span>
+          <span v-if="product.isNew" class="tag tag-primary">新品</span>
+          <span class="tag tag-gray">健康食品</span>
+        </div>
+      </div>
+
+      <!-- 营养信息（模拟） -->
+      <div class="nutrition-card">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="color:var(--primary)"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+          营养信息（每份）
+        </div>
+        <div class="nut-grid">
+          <div class="nut-cell"><div class="nut-val">{{ product.calories || '—' }}</div><div class="nut-lbl">千卡</div></div>
+          <div class="nut-cell"><div class="nut-val">{{ product.protein  || '—' }}</div><div class="nut-lbl">蛋白质g</div></div>
+          <div class="nut-cell"><div class="nut-val">{{ product.carbs    || '—' }}</div><div class="nut-lbl">碳水g</div></div>
+          <div class="nut-cell"><div class="nut-val">{{ product.fat      || '—' }}</div><div class="nut-lbl">脂肪g</div></div>
+        </div>
+      </div>
+
+      <!-- 食材成分 -->
+      <div v-if="ingredients.length" class="ing-section">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="color:var(--primary)"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20C19 20 22 3 22 3c-1 2-8 2-8 2H14z"/></svg>
+          食材成分
+        </div>
+        <div class="ing-chip-row">
+          <div v-for="ing in ingredients" :key="ing.id" class="ing-chip"
+               @click="location.href='ingredient-list.html'">
+            <div>
+              <div class="ing-chip-name">{{ ing.name }}</div>
+              <div class="ing-chip-kcal">{{ ing.calories || '—' }} 千卡</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height: 90px;"></div>
     </div>
 
-    <div class="action-bar">
-        <button class="buy-btn" @click="addToCart">加入购物车</button>
+    <!-- 加载/错误 -->
+    <div v-if="!product.id && !error" class="empty-state" style="padding-top:140px">
+      <span>加载中…</span>
     </div>
-</div>
+    <div v-if="error" class="empty-state" style="padding-top:140px;color:#EF4444">{{ error }}</div>
 
-<script>
-    axios.defaults.baseURL = '/api';
+    <!-- 加购底栏 -->
+    <div class="buy-bar" v-if="product.id">
+      <button class="fav-btn2" @click="Utils.toast('收藏功能开发中')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </button>
+      <div class="qty-ctrl">
+        <button class="qty-btn" @click="qty=Math.max(1,qty-1)">−</button>
+        <span class="qty-val">{{ qty }}</span>
+        <button class="qty-btn" @click="qty++">+</button>
+      </div>
+      <button class="cart-btn" @click="Utils.toast('购物车功能开发中')">加入购物车</button>
+    </div>
+  </div>
 
+  <script src="js/vue.min.js"></script>
+  <script src="js/axios.min.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
     new Vue({
-        el: '#app',
-        data: {
-            productId: null,
-            product: null,
-            loading: false
-        },
-        created() {
-            const params = new URLSearchParams(window.location.search);
-            this.productId = params.get('id');
-            if (!this.productId) {
-                alert('参数错误');
-                history.back();
-                return;
-            }
-            this.loadData();
-        },
-        methods: {
-            handleImgError(e) {
-                e.target.src = 'https://via.placeholder.com/400?text=No+Img';
-            },
-            async loadData() {
-                this.loading = true;
-                try {
-                    const res = await axios.get('/product/detail', {
-                        params: { id: this.productId }
-                    });
-                    if (res.data.success) {
-                        this.product = res.data.data;
-                    } else {
-                        alert(res.data.errorMsg || '加载失败');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert('网络异常');
-                } finally {
-                    this.loading = false;
-                }
-            },
-            addToCart() {
-                alert('购物车功能开发中...');
-            }
-        }
+      el: '#app',
+      data: { product: {}, ingredients: [], error: null, qty: 1, scrolled: false },
+      async created() {
+        window.addEventListener('scroll', () => { this.scrolled = window.scrollY > 180; });
+        const id = Utils.getParam('id');
+        if (!id) { this.error = '参数错误'; return; }
+        try {
+          const res = await axios.get(`/api/product/detail/${id}`);
+          this.product = res.data?.data || {};
+          if (!this.product.id) this.error = '商品不存在';
+          // 尝试加载食材成分
+          try {
+            const res2 = await axios.get(`/api/product/${id}/ingredients`);
+            this.ingredients = res2.data?.data || [];
+          } catch { /* 接口未实现则静默 */ }
+        } catch { this.error = '加载失败，请稍后重试'; }
+      },
     });
-</script>
+  </script>
 </body>
 </html>

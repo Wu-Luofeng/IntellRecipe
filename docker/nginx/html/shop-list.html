@@ -1,148 +1,220 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>商家列表 - 滚动加载</title>
-    <script src="https://cdn.bootcdn.net/ajax/libs/vue/2.7.16/vue.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.6.8/axios.min.js"></script>
-    <script src="js/request.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; padding-top: 70px; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .header-bar { position: fixed; top: 0; left: 0; right: 0; height: 50px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
-        .back-btn { text-decoration: none; color: #009688; font-size: 1.2rem; font-weight: bold; margin-right: 15px; display: flex; align-items: center; }
-        .page-title { font-weight: bold; font-size: 1.1rem; }
-        
-        .shop-item { background: white; border-radius: 8px; padding: 15px; margin-bottom: 15px; display: flex; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s; }
-        .shop-item:active { transform: scale(0.98); }
-        .shop-img { width: 80px; height: 80px; background: #eee; border-radius: 4px; object-fit: cover; margin-right: 15px; flex-shrink: 0; }
-        .shop-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .shop-name { font-weight: bold; font-size: 16px; color: #333; }
-        .shop-desc { color: #666; font-size: 13px; margin: 5px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .shop-meta { color: #999; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .score { color: #ff9800; font-weight: bold; background: #fff7e6; padding: 2px 5px; border-radius: 4px; }
-        
-        .loading, .no-more { text-align: center; padding: 20px; color: #999; }
-        
-        /* 骨架屏效果 */
-        .skeleton { background: #f0f0f0; border-radius: 4px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>附近商家 - IntellRecipe</title>
+  <link rel="stylesheet" href="css/theme.css">
+  <style>
+    .sticky-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: var(--bg-card); border-bottom: 1px solid var(--border);
+    }
+    .header-row { display: flex; align-items: center; padding: 10px 16px 8px; gap: 12px; }
+    .header-row .search-bar { flex: 1; }
+    .filter-row {
+      display: flex; gap: 8px; overflow-x: auto; padding: 6px 16px 10px;
+      scrollbar-width: none;
+    }
+    .filter-row::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      flex-shrink: 0; display: flex; align-items: center; gap: 4px;
+      padding: 5px 14px; border-radius: 16px; font-size: 13px; cursor: pointer;
+      background: var(--bg); color: var(--text-sub); font-weight: 500;
+      transition: background var(--transition), color var(--transition);
+    }
+    .filter-chip.active { background: var(--primary); color: #fff; }
+    .filter-chip svg { width: 14px; height: 14px; }
+
+    .sticky-placeholder { height: 106px; }
+
+    /* 商家卡片 */
+    .shop-card {
+      background: var(--bg-card); border-radius: var(--radius-md);
+      margin: 0 16px 12px; overflow: hidden; box-shadow: var(--shadow-sm);
+      cursor: pointer; transition: transform var(--transition);
+    }
+    .shop-card:active { transform: scale(.99); }
+    .shop-cover { width: 100%; height: 140px; object-fit: cover; background: var(--bg); position: relative; display: flex; align-items: center; justify-content: center; }
+    .shop-cover-img { width: 100%; height: 100%; object-fit: cover; }
+    .shop-cover-placeholder { font-size: 48px; }
+    .shop-badge {
+      position: absolute; top: 10px; left: 10px;
+      background: var(--accent); color: #fff;
+      padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    }
+    .shop-body { padding: 12px 14px; }
+    .shop-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+    .shop-name { font-size: 16px; font-weight: 700; }
+    .shop-tag-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+    .shop-rating { display: flex; align-items: center; gap: 4px; }
+    .shop-rating .star { color: #FFC107; font-size: 14px; }
+    .shop-rating .score { font-size: 14px; font-weight: 600; color: var(--text-main); }
+    .shop-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+    .shop-meta { font-size: 12px; color: var(--text-sub); display: flex; gap: 12px; }
+    .shop-distance { font-size: 12px; color: var(--text-hint); display: flex; align-items: center; gap: 3px; }
+    .shop-distance svg { width: 13px; height: 13px; }
+
+    .sort-bar {
+      display: flex; background: var(--bg-card); border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    .sort-item {
+      flex: 1; text-align: center; padding: 10px 0; font-size: 13px;
+      color: var(--text-sub); cursor: pointer; font-weight: 500;
+      border-bottom: 2px solid transparent; transition: color var(--transition), border-color var(--transition);
+    }
+    .sort-item.active { color: var(--primary); border-bottom-color: var(--primary); }
+  </style>
 </head>
 <body>
-
-<div id="app">
-    <!-- 顶部导航栏 -->
-    <div class="header-bar">
-        <a href="index.html" class="back-btn">⬅</a>
-        <span class="page-title">附近商家</span>
+  <div id="app">
+    <div class="sticky-header">
+      <div class="header-row">
+        <div class="search-bar" style="flex:1">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input v-model="keyword" @input="onSearch" type="text" placeholder="搜索商家、菜品">
+        </div>
+      </div>
+      <div class="filter-row">
+        <div v-for="tag in tags" :key="tag.id"
+             :class="['filter-chip', activeTag === tag.id ? 'active' : '']"
+             @click="switchTag(tag.id)">{{ tag.name }}</div>
+      </div>
     </div>
 
-    <div class="container">
-        <div class="shop-list">
-            <div v-for="shop in shopList" :key="shop.id" class="shop-item" @click="goToProducts(shop.id)" style="cursor: pointer;">
-                <img :src="shop.image || 'https://via.placeholder.com/80?text=Shop'" class="shop-img" alt="商家图片" @error="handleImgError">
-                <div class="shop-info">
-                    <div class="shop-name">{{ shop.name }}</div>
-                    <div class="shop-desc">{{ shop.description || '暂无描述' }}</div>
-                    <div class="shop-meta">
-                        <span class="score">★ {{ (shop.score / 10).toFixed(1) }}</span>
-                        <span>{{ shop.address || '未知距离' }}</span>
-                    </div>
-                </div>
+    <div class="sticky-placeholder"></div>
+
+    <!-- 排序栏 -->
+    <div class="sort-bar">
+      <div :class="['sort-item', sort==='default'?'active':'']" @click="setSort('default')">综合排序</div>
+      <div :class="['sort-item', sort==='rating'?'active':'']" @click="setSort('rating')">评分最高</div>
+      <div :class="['sort-item', sort==='distance'?'active':'']" @click="setSort('distance')">距离最近</div>
+      <div :class="['sort-item', sort==='sales'?'active':'']" @click="setSort('sales')">销量最多</div>
+    </div>
+
+    <!-- 商家列表 -->
+    <div v-for="shop in list" :key="shop.id" class="shop-card"
+         @click="goDetail(shop.id)">
+      <div class="shop-cover">
+        <img v-if="shop.images" :src="shop.images" class="shop-cover-img" :alt="shop.name"
+             @error="$event.target.style.display='none'">
+        <span v-else class="shop-cover-placeholder">🏪</span>
+        <div v-if="shop.score && shop.score >= 4.8" class="shop-badge">精选</div>
+      </div>
+      <div class="shop-body">
+        <div class="shop-top">
+          <div>
+            <div class="shop-name">{{ shop.name }}</div>
+            <div class="shop-tag-row">
+              <span v-for="t in shopTags(shop)" :key="t" class="tag tag-gray">{{ t }}</span>
             </div>
+          </div>
+          <div class="shop-rating">
+            <span class="star">★</span>
+            <span class="score">{{ shop.score ? shop.score.toFixed(1) : '4.8' }}</span>
+          </div>
         </div>
-
-        <div v-if="loading" class="loading">
-            <span>🔄 加载中...</span>
+        <div class="shop-bottom">
+          <div class="shop-meta">
+            <span>月售 {{ shop.sold || 0 }} 单</span>
+            <span>人均 ¥{{ shop.avgPrice || 30 }}</span>
+          </div>
+          <div class="shop-distance">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            {{ shop.distance || '500m' }}
+          </div>
         </div>
-        <div v-if="finished && shopList.length > 0" class="no-more">
-            <span>🏁 没有更多了</span>
-        </div>
-        <div v-if="finished && shopList.length === 0" class="no-more">
-            <span>😕 暂无商家数据</span>
-        </div>
+      </div>
     </div>
-</div>
 
-<script>
-    axios.defaults.baseURL = '/api';
+    <div v-if="loading" class="load-more" style="text-align:center;padding:20px;color:var(--text-hint)">加载中…</div>
+    <div v-else-if="noMore" class="load-more" style="text-align:center;padding:20px;color:var(--text-hint)">— 已显示全部 —</div>
+    <div v-else-if="list.length===0 && !loading" class="empty-state">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      <span>暂无商家</span>
+    </div>
 
+    <div style="height: var(--nav-h)"></div>
+  </div>
+
+  <!-- 底部导航 -->
+  <nav class="bottom-nav">
+    <div class="nav-item" onclick="location.href='index.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>首页</span>
+    </div>
+    <div class="nav-item" onclick="location.href='ingredient-list.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20C19 20 22 3 22 3c-1 2-8 2-8 2H14z"/></svg>
+      <span>食材</span>
+    </div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      <span>商家</span>
+    </div>
+    <div class="nav-item" onclick="location.href='voucher-list.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v4c1.1 0 2 .9 2 2s-.9 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2z"/></svg>
+      <span>优惠券</span>
+    </div>
+    <div class="nav-item" onclick="location.href='profile.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span>我的</span>
+    </div>
+  </nav>
+
+  <script src="js/vue.min.js"></script>
+  <script src="js/axios.min.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
     new Vue({
-        el: '#app',
-        data: {
-            shopList: [],
-            loading: false,
-            finished: false,
-            lastId: null, // 游标
-            limit: 10
+      el: '#app',
+      data: {
+        list: [], page: 1, pageSize: 12, loading: false, noMore: false,
+        keyword: '', searchTimer: null,
+        activeTag: 0, sort: 'default',
+        tags: [
+          { id: 0, name: '全部' },
+          { id: 1, name: '健身餐' },
+          { id: 2, name: '轻食' },
+          { id: 3, name: '素食' },
+          { id: 4, name: '低卡' },
+          { id: 5, name: '高蛋白' },
+        ],
+      },
+      created() { this.loadMore(); window.addEventListener('scroll', this.onScroll); },
+      beforeDestroy() { window.removeEventListener('scroll', this.onScroll); },
+      methods: {
+        async loadMore() {
+          if (this.loading || this.noMore) return;
+          this.loading = true;
+          try {
+            const params = { page: this.page, pageSize: this.pageSize, orderByAsc: 'distance' };
+            if (this.keyword) params.name = this.keyword;
+            const res = await axios.get('/api/shop/list', { params });
+            const rows = res.data?.data?.records || res.data?.data || [];
+            this.list.push(...rows);
+            if (rows.length < this.pageSize) this.noMore = true; else this.page++;
+          } catch { Utils.toast('加载失败'); } finally { this.loading = false; }
         },
-        mounted() {
-            this.loadData();
-            // 监听滚动事件
-            window.addEventListener('scroll', this.handleScroll);
+        shopTags(shop) {
+          const tags = [];
+          if (shop.typeId === 1) tags.push('健身餐');
+          if (shop.isNew) tags.push('新店');
+          if (shop.score >= 4.9) tags.push('口碑佳');
+          return tags.slice(0, 2);
         },
-        destroyed() {
-            window.removeEventListener('scroll', this.handleScroll);
+        onSearch()   { clearTimeout(this.searchTimer); this.searchTimer = setTimeout(()=>this.reset(), 400); },
+        switchTag(id){ this.activeTag = id; this.reset(); },
+        setSort(s)   { this.sort = s; this.reset(); },
+        reset()      { this.list = []; this.page = 1; this.noMore = false; this.loadMore(); },
+        onScroll()   {
+          const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+          if (scrollHeight - scrollTop - clientHeight < 120) this.loadMore();
         },
-        methods: {
-            goToProducts(id) {
-                window.location.href = `product-list.html?merchantId=${id}`;
-            },
-            handleImgError(e) {
-                e.target.src = 'https://via.placeholder.com/80?text=No+Img';
-            },
-            handleScroll() {
-                // 滚动到底部检测
-                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-                const clientHeight = document.documentElement.clientHeight;
-                const scrollHeight = document.documentElement.scrollHeight;
-                
-                // 距离底部 50px 时触发加载
-                if (scrollTop + clientHeight >= scrollHeight - 50) {
-                    this.loadData();
-                }
-            },
-            async loadData() {
-                if (this.loading || this.finished) return;
-                
-                this.loading = true;
-                try {
-                    const params = { limit: this.limit };
-                    if (this.lastId) {
-                        params.lastId = this.lastId;
-                    }
-
-                    const res = await axios.get('/merchant/list', { params });
-                    
-                    if (res.data.success) {
-                        const result = res.data.data;
-                        const newList = result.list || [];
-                        
-                        if (newList.length > 0) {
-                            this.shopList = this.shopList.concat(newList);
-                            // 注意：后端返回的是 minTime 作为下一次的游标
-                            this.lastId = result.minTime; 
-                        } else {
-                            this.finished = true; // 列表为空，肯定没数据了
-                        }
-                        
-                        // 核心修复：如果返回的数据少于 limit，或者 minTime 为空，说明是最后一页
-                        if (newList.length < this.limit || !result.minTime) {
-                            this.finished = true;
-                        }
-                    } else {
-                        console.error('加载失败:', res.data.errorMsg);
-                    }
-                } catch (err) {
-                    console.error('请求出错:', err);
-                } finally {
-                    this.loading = false;
-                }
-            }
-        }
-    })
-</script>
+        goDetail(id) { location.href = `product-list.html?shopId=${id}`; },
+      }
+    });
+  </script>
 </body>
 </html>
