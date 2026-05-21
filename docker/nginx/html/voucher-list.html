@@ -212,7 +212,10 @@
         },
         switchTab(t) { this.tab = t; },
         formatDate(d) { return Utils.formatDate(d); },
-        goDetail(id) { location.href = `voucher-detail.html?id=${id}`; },
+        goDetail(id) {
+          const shopId = Utils.getParam('shopId') || 1;
+          location.href = `voucher-detail.html?id=${id}&merchantId=${shopId}`;
+        },
         startCountdown() {
           const update = () => {
             const now = new Date();

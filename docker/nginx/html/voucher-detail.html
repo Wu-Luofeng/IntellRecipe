@@ -204,17 +204,14 @@
       methods: {
         async load() {
           const id = Utils.getParam('id');
+          const merchantId = Utils.getParam('merchantId') || Utils.getParam('shopId');
           if (!id) { this.error = '参数错误'; return; }
+          if (!merchantId) { this.error = '缺少商家参数，请从商家页进入'; return; }
           try {
-            const res = await axios.get(`/api/vouchers/list/1`);
+            const res = await axios.get(`/api/vouchers/list/${merchantId}`);
             const list = res.data?.data || [];
             this.voucher = list.find(v => String(v.id) === String(id));
-            if (!this.voucher) {
-              // 尝试直接拉单个
-              const res2 = await axios.get(`/api/voucher/${id}`);
-              this.voucher = res2.data?.data;
-            }
-            if (!this.voucher) this.error = '未找到该优惠券';
+            if (!this.voucher) this.error = '未找到该优惠券（可能已下架）';
           } catch { this.error = '加载失败，请稍后重试'; }
         },
         async buy() {

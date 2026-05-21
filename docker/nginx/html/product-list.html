@@ -266,7 +266,7 @@
           const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
           if (scrollHeight - scrollTop - clientHeight < 120) this.loadMore();
         },
-        goVoucher(id) { location.href = `voucher-detail.html?id=${id}`; },
+        goVoucher(id) { location.href = `voucher-detail.html?id=${id}&merchantId=${this.merchantId}`; },
         goDetail(id)  { location.href = `product-detail.html?id=${id}&merchantId=${this.merchantId}`; },
         addCart(p)    { Utils.toast('购物车功能开发中'); },
       },
