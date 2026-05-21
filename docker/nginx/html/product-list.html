@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>商品列表 - IntellRecipe</title>
+  <title>商家详情 - IntellRecipe</title>
   <link rel="stylesheet" href="css/theme.css">
   <style>
     /* 商家头图 */
@@ -20,7 +20,55 @@
     .shop-hero-name { font-size: 20px; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,.4); }
     .shop-hero-meta { font-size: 12px; opacity: .9; margin-top: 4px; display: flex; gap: 12px; }
 
-    /* 分类 + 筛选 */
+    /* ── 优惠券区 ── */
+    .voucher-section { padding: 14px 0 4px; background: var(--bg-card); border-bottom: 1px solid var(--border); }
+    .voucher-section-title {
+      padding: 0 16px 10px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .voucher-section-title span { font-size: 15px; font-weight: 700; }
+    .voucher-section-title a { font-size: 13px; color: var(--primary); }
+    .voucher-scroll {
+      display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 12px;
+      scrollbar-width: none;
+    }
+    .voucher-scroll::-webkit-scrollbar { display: none; }
+
+    /* 优惠券小卡片 */
+    .v-card {
+      flex-shrink: 0; display: flex; align-items: stretch;
+      border-radius: var(--radius-sm); overflow: hidden;
+      box-shadow: var(--shadow-sm); cursor: pointer; width: 180px;
+      transition: transform var(--transition);
+    }
+    .v-card:active { transform: scale(.96); }
+    .v-left {
+      width: 64px; flex-shrink: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 10px 4px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff;
+      position: relative;
+    }
+    .v-left.seckill { background: linear-gradient(135deg, #FF6E40, #FF3D00); }
+    .v-amount { font-size: 22px; font-weight: 900; line-height: 1; }
+    .v-unit   { font-size: 10px; opacity: .9; margin-top: 2px; }
+    /* 锯齿缺口 */
+    .v-notch-t, .v-notch-b {
+      position: absolute; right: -8px; width: 16px; height: 16px;
+      background: var(--bg-card); border-radius: 50%;
+    }
+    .v-notch-t { top: -8px; }
+    .v-notch-b { bottom: -8px; }
+    .v-right { background: var(--bg-card); flex: 1; padding: 8px 10px; min-width: 0; }
+    .v-title { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .v-rule  { font-size: 11px; color: var(--text-sub); margin: 3px 0; }
+    .v-badge {
+      display: inline-block; font-size: 10px; padding: 2px 6px;
+      border-radius: 4px; font-weight: 600;
+      background: var(--primary-light); color: var(--primary);
+    }
+    .v-badge.seckill { background: var(--accent-light); color: var(--accent); }
+
+    /* 分类 Tab */
     .cat-bar {
       display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px;
       background: var(--bg-card); border-bottom: 1px solid var(--border);
@@ -48,7 +96,10 @@
     }
     .product-img img { width: 100%; height: 100%; object-fit: cover; }
     .product-body { padding: 10px; }
-    .product-name { font-size: 14px; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px; }
+    .product-name {
+      font-size: 14px; font-weight: 600; margin-bottom: 6px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
     .product-price-row { display: flex; align-items: center; justify-content: space-between; }
     .product-price { color: var(--accent); font-size: 16px; font-weight: 800; }
     .product-price span { font-size: 12px; }
@@ -60,8 +111,6 @@
     }
     .add-btn:active { transform: scale(.88); }
     .product-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
-
-    /* 空状态、loading */
     .load-tip { text-align: center; padding: 24px; color: var(--text-hint); grid-column: span 2; }
   </style>
 </head>
@@ -69,44 +118,74 @@
   <div id="app">
     <div class="app-header">
       <div class="back-btn" onclick="history.back()">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+          <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
       </div>
-      <span class="page-title">商品列表</span>
-      <span class="header-action" @click="location.href='voucher-list.html'">领券</span>
+      <span class="page-title">{{ merchantName || '商家详情' }}</span>
     </div>
 
     <div style="padding-top: var(--header-h)">
-      <!-- 商家头图（暂无 GET /merchant/{id} 接口，使用占位） -->
+
+      <!-- 商家头图 -->
       <div class="shop-hero">
-        <div class="shop-img-placeholder" style="width:100%;height:100%;background:linear-gradient(135deg,var(--primary-light),#fff);display:flex;align-items:center;justify-content:center;font-size:64px">🏪</div>
+        <img v-if="merchantImg" :src="merchantImg" class="shop-hero-img" :alt="merchantName"
+             @error="$event.target.style.display='none'">
+        <div v-else style="width:100%;height:100%;background:linear-gradient(135deg,var(--primary-light),#fff);display:flex;align-items:center;justify-content:center;font-size:64px">🏪</div>
         <div class="shop-hero-info">
-          <div class="shop-hero-name">精选商家</div>
+          <div class="shop-hero-name">{{ merchantName || '精选商家' }}</div>
           <div class="shop-hero-meta">
-            <span>★ 4.8</span>
-            <span>新鲜直达</span>
-            <span>品质保障</span>
+            <span>★ {{ merchantScore }}</span>
+            <span>月售 {{ merchantSold }} 单</span>
+            <span v-if="merchantAddr">{{ merchantAddr }}</span>
           </div>
         </div>
       </div>
 
-      <!-- 分类 -->
+      <!-- 优惠券区 -->
+      <div class="voucher-section" v-if="vouchers.length">
+        <div class="voucher-section-title">
+          <span>本店优惠券</span>
+          <span style="font-size:12px;color:var(--text-hint)">点击即可抢购</span>
+        </div>
+        <div class="voucher-scroll">
+          <div v-for="v in vouchers" :key="v.id" class="v-card" @click="goVoucher(v.id)">
+            <div :class="['v-left', v.type===1 ? 'seckill' : '']">
+              <div class="v-notch-t"></div>
+              <div class="v-amount">{{ v.actualValue }}</div>
+              <div class="v-unit">元</div>
+              <div class="v-notch-b"></div>
+            </div>
+            <div class="v-right">
+              <div class="v-title">{{ v.title || (v.type===1 ? '限时秒杀券' : '优惠券') }}</div>
+              <div class="v-rule">满 {{ v.payValue }} 元可用</div>
+              <span :class="['v-badge', v.type===1 ? 'seckill' : '']">
+                {{ v.type===1 ? '立即抢购' : '立即领取' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 加载中占位 -->
+      <div v-else-if="voucherLoading" style="padding:12px 16px;font-size:13px;color:var(--text-hint)">优惠券加载中…</div>
+
+      <!-- 分类 Tab -->
       <div class="cat-bar">
         <div v-for="cat in categories" :key="cat.id"
-             :class="['cat-chip', activeCat===cat.id?'active':'']"
-             @click="activeCat=cat.id">{{ cat.name }}</div>
+             :class="['cat-chip', activeCat===cat.id ? 'active' : '']"
+             @click="activeCat = cat.id">{{ cat.name }}</div>
       </div>
 
       <!-- 商品网格 -->
       <div class="product-grid">
-        <div v-for="p in list" :key="p.id" class="product-card"
-             @click="goDetail(p.id)">
+        <div v-for="p in list" :key="p.id" class="product-card" @click="goDetail(p.id)">
           <div class="product-img">
             <img v-if="p.image" :src="p.image" :alt="p.name" @error="$event.target.style.display='none'">
             <span v-else>🥗</span>
           </div>
           <div class="product-body">
             <div class="product-tags">
-              <span v-if="p.stock != null && p.stock < 5" class="tag tag-accent" style="font-size:11px">仅剩{{p.stock}}</span>
+              <span v-if="p.stock != null && p.stock < 5" class="tag tag-accent" style="font-size:11px">仅剩{{ p.stock }}</span>
             </div>
             <div class="product-name">{{ p.name }}</div>
             <div class="product-price-row">
@@ -117,8 +196,8 @@
         </div>
 
         <div v-if="loading" class="load-tip">加载中…</div>
-        <div v-else-if="list.length===0 && !loading" class="load-tip">暂无商品</div>
-        <div v-else-if="noMore && list.length>0" class="load-tip">— 已显示全部 —</div>
+        <div v-else-if="list.length === 0 && !loading" class="load-tip">暂无商品</div>
+        <div v-else-if="noMore && list.length > 0" class="load-tip">— 已显示全部 —</div>
       </div>
     </div>
   </div>
@@ -131,18 +210,37 @@
     new Vue({
       el: '#app',
       data: {
-        merchantId: null, list: [], lastId: null, limit: 20,
-        loading: false, noMore: false, activeCat: 0,
-        categories: [{ id: 0, name: '全部' }, { id: 1, name: '轻食' }, { id: 2, name: '沙拉' }, { id: 3, name: '套餐' }, { id: 4, name: '饮品' }],
+        merchantId: null,
+        merchantName: '', merchantImg: '', merchantScore: '—', merchantSold: 0, merchantAddr: '',
+        vouchers: [], voucherLoading: false,
+        list: [], lastId: null, limit: 20, loading: false, noMore: false,
+        activeCat: 0,
+        categories: [
+          { id: 0, name: '全部' }, { id: 1, name: '轻食' },
+          { id: 2, name: '沙拉' }, { id: 3, name: '套餐' }, { id: 4, name: '饮品' },
+        ],
       },
       created() {
-        // 兼容旧的 shopId 参数
         this.merchantId = Utils.getParam('merchantId') || Utils.getParam('shopId') || 1;
+        // 并行加载：优惠券 + 商品
+        this.loadVouchers();
         this.loadMore();
         window.addEventListener('scroll', this.onScroll);
       },
       beforeDestroy() { window.removeEventListener('scroll', this.onScroll); },
       methods: {
+        async loadVouchers() {
+          this.voucherLoading = true;
+          try {
+            const res = await axios.get(`/api/vouchers/list/${this.merchantId}`);
+            const list = res.data?.data || [];
+            // 只显示有效券（status = 1 表示上架，暂不过滤以防数据问题）
+            this.vouchers = list;
+            // 顺带取商家名（从第一条券的 shopId 无法取，券接口无商家信息，仅占位）
+          } catch (e) {
+            // 接口失败静默处理，优惠券区隐藏
+          } finally { this.voucherLoading = false; }
+        },
         async loadMore() {
           if (this.loading || this.noMore) return;
           this.loading = true;
@@ -153,7 +251,7 @@
             const data = res.data?.data || {};
             const rows = data.list || [];
             this.list.push(...rows);
-            if (rows.length < this.limit || data.minTime == null) {
+            if (!rows.length || data.minTime == null) {
               this.noMore = true;
             } else {
               this.lastId = data.minTime;
@@ -167,9 +265,10 @@
           const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
           if (scrollHeight - scrollTop - clientHeight < 120) this.loadMore();
         },
-        goDetail(id) { location.href = `product-detail.html?id=${id}&merchantId=${this.merchantId}`; },
-        addCart(p) { Utils.toast('购物车功能开发中'); },
-      }
+        goVoucher(id) { location.href = `voucher-detail.html?id=${id}`; },
+        goDetail(id)  { location.href = `product-detail.html?id=${id}&merchantId=${this.merchantId}`; },
+        addCart(p)    { Utils.toast('购物车功能开发中'); },
+      },
     });
   </script>
 </body>
