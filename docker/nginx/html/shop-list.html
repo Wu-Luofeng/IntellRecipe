@@ -66,6 +66,19 @@
       border-bottom: 2px solid transparent; transition: color var(--transition), border-color var(--transition);
     }
     .sort-item.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .mode-banner {
+      margin: 0 16px 12px; padding: 12px 16px; border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-light), #fff3e0);
+      border: 1px solid #ffccbc; font-size: 13px; color: var(--text-main);
+    }
+    .mode-banner strong { color: var(--accent); }
+    .shop-cta {
+      margin-top: 8px; padding: 6px 14px; border-radius: var(--radius-btn);
+      font-size: 13px; font-weight: 600; text-align: center; color: #fff;
+      background: var(--primary);
+    }
+    .shop-cta.voucher { background: var(--accent); }
   </style>
 </head>
 <body>
@@ -86,6 +99,11 @@
 
     <div class="sticky-placeholder"></div>
 
+    <!-- 领券模式提示 -->
+    <div v-if="isVoucherMode" class="mode-banner">
+      <strong>领券中心</strong> — 选择商家，进入后即可查看并领取该店优惠券
+    </div>
+
     <!-- 排序栏 -->
     <div class="sort-bar">
       <div :class="['sort-item', sort==='default'?'active':'']" @click="setSort('default')">综合排序</div>
@@ -96,7 +114,7 @@
 
     <!-- 商家列表 -->
     <div v-for="shop in list" :key="shop.id" class="shop-card"
-         @click="goDetail(shop.id)">
+         @click="goDetail(shop)">
       <div class="shop-cover">
         <img v-if="firstImage(shop.images)" :src="firstImage(shop.images)" class="shop-cover-img" :alt="shop.name"
              @error="$event.target.style.display='none'">
@@ -126,6 +144,9 @@
             {{ shop.address }}
           </div>
         </div>
+        <div :class="['shop-cta', isVoucherMode ? 'voucher' : '']">
+          {{ isVoucherMode ? '进入领券 ›' : '进入店铺 ›' }}
+        </div>
       </div>
     </div>
 
@@ -140,7 +161,7 @@
   </div>
 
   <!-- 底部导航 -->
-  <nav class="bottom-nav">
+  <nav class="bottom-nav" id="bottomNav">
     <div class="nav-item" onclick="location.href='index.html'">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       <span>首页</span>
@@ -149,11 +170,11 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20C19 20 22 3 22 3c-1 2-8 2-8 2H14z"/></svg>
       <span>食材</span>
     </div>
-    <div class="nav-item active">
+    <div class="nav-item" id="navShop" onclick="location.href='shop-list.html'">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
       <span>商家</span>
     </div>
-    <div class="nav-item active">
+    <div class="nav-item" id="navVoucher" onclick="location.href='shop-list.html?mode=voucher'">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v4c1.1 0 2 .9 2 2s-.9 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2z"/></svg>
       <span>优惠券</span>
     </div>
@@ -171,6 +192,7 @@
     new Vue({
       el: '#app',
       data: {
+        isVoucherMode: Utils.getParam('mode') === 'voucher',
         list: [], lastId: null, limit: 12, loading: false, noMore: false,
         keyword: '', searchTimer: null,
         activeTag: 0, sort: 'default',
@@ -223,9 +245,22 @@
           const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
           if (scrollHeight - scrollTop - clientHeight < 120) this.loadMore();
         },
-        goDetail(id) { location.href = `product-list.html?merchantId=${id}`; },
+        goDetail(shop) {
+          sessionStorage.setItem('currentMerchant', JSON.stringify({
+            id: shop.id, name: shop.name, images: shop.images,
+            score: shop.score, sold: shop.sold, avgPrice: shop.avgPrice, address: shop.address,
+          }));
+          const tab = this.isVoucherMode ? 'vouchers' : 'products';
+          location.href = `product-list.html?merchantId=${shop.id}&tab=${tab}`;
+        },
       }
     });
+
+    // 底部导航高亮
+    (function () {
+      const isVoucher = Utils.getParam('mode') === 'voucher';
+      document.getElementById(isVoucher ? 'navVoucher' : 'navShop').classList.add('active');
+    })();
   </script>
 </body>
 </html>

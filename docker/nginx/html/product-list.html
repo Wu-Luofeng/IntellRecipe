@@ -7,198 +7,163 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/theme.css">
   <style>
-    /* 商家头图 */
     .shop-hero {
-      height: 180px; background: linear-gradient(135deg, var(--primary-light), var(--bg));
-      position: relative; overflow: hidden;
+      height: 160px; position: relative; overflow: hidden;
+      background: linear-gradient(135deg, var(--primary-light), var(--bg));
     }
     .shop-hero-img { width: 100%; height: 100%; object-fit: cover; }
     .shop-hero-info {
       position: absolute; bottom: 0; left: 0; right: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,.55));
-      padding: 20px 16px 12px; color: #fff;
+      background: linear-gradient(transparent, rgba(0,0,0,.6));
+      padding: 16px; color: #fff;
     }
-    .shop-hero-name { font-size: 20px; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,.4); }
-    .shop-hero-meta { font-size: 12px; opacity: .9; margin-top: 4px; display: flex; gap: 12px; }
+    .shop-hero-name { font-size: 18px; font-weight: 700; }
+    .shop-hero-meta { font-size: 12px; opacity: .9; margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
 
-    /* ── 优惠券区 ── */
-    .voucher-section { padding: 14px 0 4px; background: var(--bg-card); border-bottom: 1px solid var(--border); }
-    .voucher-section-title {
-      padding: 0 16px 10px;
-      display: flex; align-items: center; justify-content: space-between;
+    /* 页内 Tab：优惠券 | 商品 */
+    .page-tabs {
+      display: flex; background: var(--bg-card);
+      border-bottom: 2px solid var(--border);
+      position: sticky; top: var(--header-h); z-index: 50;
     }
-    .voucher-section-title span { font-size: 15px; font-weight: 700; }
-    .voucher-section-title a { font-size: 13px; color: var(--primary); }
-    .voucher-scroll {
-      display: flex; gap: 10px; overflow-x: auto; padding: 0 16px 12px;
-      scrollbar-width: none;
+    .page-tab {
+      flex: 1; text-align: center; padding: 14px 0;
+      font-size: 15px; font-weight: 600; color: var(--text-sub);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: color .2s, border-color .2s;
     }
-    .voucher-scroll::-webkit-scrollbar { display: none; }
+    .page-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .page-tab .badge {
+      display: inline-block; min-width: 18px; height: 18px; line-height: 18px;
+      padding: 0 5px; border-radius: 9px; background: var(--accent);
+      color: #fff; font-size: 11px; margin-left: 4px; vertical-align: middle;
+    }
 
-    /* 优惠券小卡片 */
-    .v-card {
-      flex-shrink: 0; display: flex; align-items: stretch;
-      border-radius: var(--radius-sm); overflow: hidden;
-      box-shadow: var(--shadow-sm); cursor: pointer; width: 180px;
-      transition: transform var(--transition);
+    /* 优惠券列表（全宽卡片） */
+    .voucher-list { padding: 12px 16px 80px; }
+    .v-full-card {
+      display: flex; align-items: stretch; background: var(--bg-card);
+      border-radius: var(--radius-md); overflow: hidden;
+      box-shadow: var(--shadow-sm); margin-bottom: 12px;
     }
-    .v-card:active { transform: scale(.96); }
-    .v-left {
-      width: 64px; flex-shrink: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; padding: 10px 4px;
+    .v-full-left {
+      width: 90px; flex-shrink: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 16px 8px;
       background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff;
-      position: relative;
     }
-    .v-left.seckill { background: linear-gradient(135deg, #FF6E40, #FF3D00); }
-    .v-amount { font-size: 22px; font-weight: 900; line-height: 1; }
-    .v-unit   { font-size: 10px; opacity: .9; margin-top: 2px; }
-    /* 锯齿缺口 */
-    .v-notch-t, .v-notch-b {
-      position: absolute; right: -8px; width: 16px; height: 16px;
-      background: var(--bg-card); border-radius: 50%;
+    .v-full-left.seckill { background: linear-gradient(135deg, #FF6E40, #FF3D00); }
+    .v-full-amount { font-size: 28px; font-weight: 900; line-height: 1; }
+    .v-full-unit { font-size: 12px; opacity: .9; }
+    .v-full-right { flex: 1; padding: 14px 16px; display: flex; flex-direction: column; justify-content: center; }
+    .v-full-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .v-full-sub { font-size: 13px; color: var(--text-sub); margin-bottom: 10px; }
+    .v-full-actions { display: flex; gap: 8px; align-items: center; }
+    .v-buy-btn {
+      padding: 8px 20px; border-radius: var(--radius-btn); border: none;
+      font-size: 14px; font-weight: 600; cursor: pointer; color: #fff;
+      background: var(--primary);
     }
-    .v-notch-t { top: -8px; }
-    .v-notch-b { bottom: -8px; }
-    .v-right { background: var(--bg-card); flex: 1; padding: 8px 10px; min-width: 0; }
-    .v-title { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .v-rule  { font-size: 11px; color: var(--text-sub); margin: 3px 0; }
-    .v-badge {
-      display: inline-block; font-size: 10px; padding: 2px 6px;
-      border-radius: 4px; font-weight: 600;
-      background: var(--primary-light); color: var(--primary);
-    }
-    .v-badge.seckill { background: var(--accent-light); color: var(--accent); }
-
-    /* 分类 Tab */
-    .cat-bar {
-      display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px;
-      background: var(--bg-card); border-bottom: 1px solid var(--border);
-      scrollbar-width: none; position: sticky; top: var(--header-h); z-index: 40;
-    }
-    .cat-bar::-webkit-scrollbar { display: none; }
-    .cat-chip {
-      flex-shrink: 0; padding: 5px 16px; border-radius: 16px;
-      font-size: 13px; font-weight: 500; cursor: pointer;
-      background: var(--bg); color: var(--text-sub);
-      transition: background var(--transition), color var(--transition);
-    }
-    .cat-chip.active { background: var(--primary); color: #fff; }
+    .v-buy-btn.seckill { background: var(--accent); }
+    .v-buy-btn:disabled { background: var(--text-hint); cursor: not-allowed; }
+    .v-detail-link { font-size: 13px; color: var(--primary); cursor: pointer; }
 
     /* 商品网格 */
-    .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px 16px; }
+    .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px 16px 80px; }
     .product-card {
       background: var(--bg-card); border-radius: var(--radius-md); overflow: hidden;
-      box-shadow: var(--shadow-sm); cursor: pointer; transition: transform var(--transition);
+      box-shadow: var(--shadow-sm); cursor: pointer;
     }
-    .product-card:active { transform: scale(.97); }
-    .product-img {
-      width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--bg);
-      display: flex; align-items: center; justify-content: center; font-size: 36px;
-    }
+    .product-img { width: 100%; aspect-ratio: 1; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 36px; }
     .product-img img { width: 100%; height: 100%; object-fit: cover; }
     .product-body { padding: 10px; }
-    .product-name {
-      font-size: 14px; font-weight: 600; margin-bottom: 6px;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .product-price-row { display: flex; align-items: center; justify-content: space-between; }
+    .product-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .product-price { color: var(--accent); font-size: 16px; font-weight: 800; }
-    .product-price span { font-size: 12px; }
-    .add-btn {
-      width: 28px; height: 28px; border-radius: 50%; background: var(--primary);
-      border: none; color: #fff; font-size: 18px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      transition: transform var(--transition);
-    }
-    .add-btn:active { transform: scale(.88); }
-    .product-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
-    .load-tip { text-align: center; padding: 24px; color: var(--text-hint); grid-column: span 2; }
+    .load-tip { text-align: center; padding: 40px 20px; color: var(--text-hint); }
   </style>
 </head>
 <body>
   <div id="app">
     <div class="app-header">
       <div class="back-btn" onclick="history.back()">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
-          <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
       </div>
-      <span class="page-title">{{ merchantName || '商家详情' }}</span>
+      <span class="page-title">{{ merchant.name || '商家详情' }}</span>
     </div>
 
     <div style="padding-top: var(--header-h)">
-
       <!-- 商家头图 -->
       <div class="shop-hero">
-        <img v-if="merchantImg" :src="merchantImg" class="shop-hero-img" :alt="merchantName"
-             @error="$event.target.style.display='none'">
-        <div v-else style="width:100%;height:100%;background:linear-gradient(135deg,var(--primary-light),#fff);display:flex;align-items:center;justify-content:center;font-size:64px">🏪</div>
+        <img v-if="merchantImg" :src="merchantImg" class="shop-hero-img" @error="merchantImg=''">
+        <div v-else style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:56px;background:var(--primary-light)">🏪</div>
         <div class="shop-hero-info">
-          <div class="shop-hero-name">{{ merchantName || '精选商家' }}</div>
+          <div class="shop-hero-name">{{ merchant.name || '商家' }}</div>
           <div class="shop-hero-meta">
-            <span>★ {{ merchantScore }}</span>
-            <span>月售 {{ merchantSold }} 单</span>
-            <span v-if="merchantAddr">{{ merchantAddr }}</span>
+            <span v-if="merchant.score != null">★ {{ (merchant.score / 10).toFixed(1) }}</span>
+            <span v-if="merchant.sold != null">月售 {{ merchant.sold }}</span>
+            <span v-if="merchant.address">{{ merchant.address }}</span>
           </div>
         </div>
       </div>
 
-      <!-- 优惠券区 -->
-      <div class="voucher-section" v-if="vouchers.length">
-        <div class="voucher-section-title">
-          <span>本店优惠券</span>
-          <span style="font-size:12px;color:var(--text-hint)">点击即可抢购</span>
+      <!-- Tab 切换 -->
+      <div class="page-tabs">
+        <div :class="['page-tab', tab==='vouchers'?'active':'']" @click="tab='vouchers'">
+          优惠券
+          <span v-if="vouchers.length" class="badge">{{ vouchers.length }}</span>
         </div>
-        <div class="voucher-scroll">
-          <div v-for="v in vouchers" :key="v.id" class="v-card" @click="goVoucher(v.id)">
-            <div :class="['v-left', v.type===1 ? 'seckill' : '']">
-              <div class="v-notch-t"></div>
-              <div class="v-amount">{{ v.actualValue }}</div>
-              <div class="v-unit">元</div>
-              <div class="v-notch-b"></div>
+        <div :class="['page-tab', tab==='products'?'active':'']" @click="tab='products'">商品</div>
+      </div>
+
+      <!-- 优惠券 Tab -->
+      <div v-show="tab==='vouchers'" class="voucher-list">
+        <div v-if="voucherLoading" class="load-tip">加载优惠券中…</div>
+        <template v-else-if="vouchers.length">
+          <div v-for="v in vouchers" :key="v.id" class="v-full-card">
+            <div :class="['v-full-left', v.type===1?'seckill':'']">
+              <div class="v-full-amount">{{ formatYuan(v.actualValue) }}</div>
+              <div class="v-full-unit">元券</div>
             </div>
-            <div class="v-right">
-              <div class="v-title">{{ v.title || (v.type===1 ? '限时秒杀券' : '优惠券') }}</div>
-              <div class="v-rule">满 {{ v.payValue }} 元可用</div>
-              <span :class="['v-badge', v.type===1 ? 'seckill' : '']">
-                {{ v.type===1 ? '立即抢购' : '立即领取' }}
-              </span>
+            <div class="v-full-right">
+              <div class="v-full-title">{{ v.title || '优惠券' }}</div>
+              <div class="v-full-sub">{{ v.subTitle || ('满 ' + formatYuan(v.payValue) + ' 元可用') }}</div>
+              <div class="v-full-actions">
+                <button :class="['v-buy-btn', v.type===1?'seckill':'']"
+                        :disabled="buyingId===v.id"
+                        @click="buyVoucher(v)">
+                  {{ buyingId===v.id ? '处理中…' : (v.type===1 ? '立即抢购' : '立即领取') }}
+                </button>
+                <span class="v-detail-link" @click="goVoucherDetail(v.id)">查看详情 ›</span>
+              </div>
             </div>
           </div>
+        </template>
+        <div v-else class="empty-state">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v4c1.1 0 2 .9 2 2s-.9 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2z"/></svg>
+          <span>该商家暂无优惠券</span>
+          <p style="font-size:12px;color:var(--text-hint);margin-top:8px;text-align:center;padding:0 20px">
+            压测商家通常没有券。Demo 数据可试：
+            <a href="product-list.html?merchantId=501&tab=vouchers" style="color:var(--primary)">江南鲜生市集</a>
+            或
+            <a href="product-list.html?merchantId=502&tab=vouchers" style="color:var(--primary)">蜀味坊</a>
+          </p>
+          <button class="btn btn-primary" style="margin-top:12px" @click="tab='products'">去看看商品</button>
         </div>
       </div>
-      <!-- 加载中占位 -->
-      <div v-else-if="voucherLoading" style="padding:12px 16px;font-size:13px;color:var(--text-hint)">优惠券加载中…</div>
 
-      <!-- 分类 Tab -->
-      <div class="cat-bar">
-        <div v-for="cat in categories" :key="cat.id"
-             :class="['cat-chip', activeCat===cat.id ? 'active' : '']"
-             @click="activeCat = cat.id">{{ cat.name }}</div>
-      </div>
-
-      <!-- 商品网格 -->
-      <div class="product-grid">
-        <div v-for="p in list" :key="p.id" class="product-card" @click="goDetail(p.id)">
+      <!-- 商品 Tab -->
+      <div v-show="tab==='products'" class="product-grid">
+        <div v-for="p in products" :key="p.id" class="product-card" @click="goProduct(p.id)">
           <div class="product-img">
             <img v-if="p.image" :src="p.image" :alt="p.name" @error="$event.target.style.display='none'">
             <span v-else>🥗</span>
           </div>
           <div class="product-body">
-            <div class="product-tags">
-              <span v-if="p.stock != null && p.stock < 5" class="tag tag-accent" style="font-size:11px">仅剩{{ p.stock }}</span>
-            </div>
             <div class="product-name">{{ p.name }}</div>
-            <div class="product-price-row">
-              <div class="product-price"><span>¥</span>{{ p.price }}</div>
-              <button class="add-btn" @click.stop="addCart(p)">+</button>
-            </div>
+            <div class="product-price">¥{{ p.price }}</div>
           </div>
         </div>
-
-        <div v-if="loading" class="load-tip">加载中…</div>
-        <div v-else-if="list.length === 0 && !loading" class="load-tip">暂无商品</div>
-        <div v-else-if="noMore && list.length > 0" class="load-tip">— 已显示全部 —</div>
+        <div v-if="productLoading" class="load-tip" style="grid-column:span 2">加载中…</div>
+        <div v-else-if="!products.length" class="load-tip" style="grid-column:span 2">暂无商品</div>
       </div>
     </div>
   </div>
@@ -212,63 +177,107 @@
       el: '#app',
       data: {
         merchantId: null,
-        merchantName: '', merchantImg: '', merchantScore: '—', merchantSold: 0, merchantAddr: '',
-        vouchers: [], voucherLoading: false,
-        list: [], lastId: null, limit: 20, loading: false, noMore: false,
-        activeCat: 0,
-        categories: [
-          { id: 0, name: '全部' }, { id: 1, name: '轻食' },
-          { id: 2, name: '沙拉' }, { id: 3, name: '套餐' }, { id: 4, name: '饮品' },
-        ],
+        merchant: {},
+        merchantImg: '',
+        tab: 'vouchers',
+        vouchers: [], voucherLoading: false, buyingId: null,
+        products: [], productLoading: false, productLastId: null, productNoMore: false,
       },
       created() {
-        this.merchantId = Utils.getParam('merchantId') || Utils.getParam('shopId') || 1;
-        // 并行加载：优惠券 + 商品
+        this.merchantId = Utils.getParam('merchantId') || Utils.getParam('shopId');
+        if (!this.merchantId) {
+          Utils.toast('请先选择商家');
+          setTimeout(() => location.href = 'shop-list.html', 800);
+          return;
+        }
+        this.tab = Utils.getParam('tab') === 'products' ? 'products' : 'vouchers';
+        this.loadMerchantFromCache();
         this.loadVouchers();
-        this.loadMore();
+        this.loadProducts();
         window.addEventListener('scroll', this.onScroll);
       },
       beforeDestroy() { window.removeEventListener('scroll', this.onScroll); },
       methods: {
+        loadMerchantFromCache() {
+          try {
+            const cached = JSON.parse(sessionStorage.getItem('currentMerchant') || '{}');
+            if (String(cached.id) === String(this.merchantId)) {
+              this.merchant = cached;
+              this.merchantImg = cached.images ? cached.images.split(',')[0].trim() : '';
+            }
+          } catch (_) {}
+        },
+        formatYuan(fen) {
+          if (fen == null) return '—';
+          // 大于 500 认为是分，否则已是元
+          return fen >= 500 ? (fen / 100).toFixed(0) : fen;
+        },
         async loadVouchers() {
           this.voucherLoading = true;
           try {
             const res = await axios.get(`/api/vouchers/list/${this.merchantId}`);
-            const list = res.data?.data || [];
-            // 只显示有效券（status = 1 表示上架，暂不过滤以防数据问题）
-            this.vouchers = list;
-            // 顺带取商家名（从第一条券的 shopId 无法取，券接口无商家信息，仅占位）
-          } catch (e) {
-            // 接口失败静默处理，优惠券区隐藏
-          } finally { this.voucherLoading = false; }
-        },
-        async loadMore() {
-          if (this.loading || this.noMore) return;
-          this.loading = true;
-          try {
-            const params = { merchantId: this.merchantId, limit: this.limit };
-            if (this.lastId) params.lastId = this.lastId;
-            const res = await axios.get('/api/product/list', { params });
-            const data = res.data?.data || {};
-            const rows = data.list || [];
-            this.list.push(...rows);
-            if (!rows.length || data.minTime == null) {
-              this.noMore = true;
-            } else {
-              this.lastId = data.minTime;
+            this.vouchers = res.data?.data || [];
+            // 从领券入口进来且没券时，自动切到商品
+            if (!this.vouchers.length && Utils.getParam('tab') !== 'products') {
+              // 保持优惠券 tab 显示空状态，让用户知道
             }
           } catch (e) {
             console.error(e);
-            Utils.toast('加载失败');
-          } finally { this.loading = false; }
+            Utils.toast('优惠券加载失败');
+          } finally { this.voucherLoading = false; }
+        },
+        async loadProducts() {
+          if (this.productLoading || this.productNoMore) return;
+          this.productLoading = true;
+          try {
+            const params = { merchantId: this.merchantId, limit: 20 };
+            if (this.productLastId) params.lastId = this.productLastId;
+            const res = await axios.get('/api/product/list', { params });
+            const data = res.data?.data || {};
+            const rows = data.list || [];
+            this.products.push(...rows);
+            if (!rows.length || data.minTime == null) this.productNoMore = true;
+            else this.productLastId = data.minTime;
+          } catch (e) {
+            console.error(e);
+          } finally { this.productLoading = false; }
         },
         onScroll() {
+          if (this.tab !== 'products') return;
           const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-          if (scrollHeight - scrollTop - clientHeight < 120) this.loadMore();
+          if (scrollHeight - scrollTop - clientHeight < 120) this.loadProducts();
         },
-        goVoucher(id) { location.href = `voucher-detail.html?id=${id}&merchantId=${this.merchantId}`; },
-        goDetail(id)  { location.href = `product-detail.html?id=${id}&merchantId=${this.merchantId}`; },
-        addCart(p)    { Utils.toast('购物车功能开发中'); },
+        async buyVoucher(v) {
+          if (!Utils.requireLogin()) return;
+          this.buyingId = v.id;
+          try {
+            const res = await axios.post(`/api/voucher-orders/purchase/${v.id}`);
+            if (res.data.success) {
+              Utils.toast('领取成功！订单号：' + (res.data.data || ''));
+            } else {
+              const msg = res.data.errorMsg || '领取失败';
+              if (msg.includes('登录')) {
+                sessionStorage.setItem('redirectAfterLogin', location.href);
+                location.href = 'login.html';
+              } else {
+                Utils.toast(msg);
+              }
+            }
+          } catch (err) {
+            if (err.response?.status === 401) {
+              sessionStorage.setItem('redirectAfterLogin', location.href);
+              location.href = 'login.html';
+            } else {
+              Utils.toast('网络异常，请稍后重试');
+            }
+          } finally { this.buyingId = null; }
+        },
+        goVoucherDetail(id) {
+          location.href = `voucher-detail.html?id=${id}&merchantId=${this.merchantId}`;
+        },
+        goProduct(id) {
+          location.href = `product-detail.html?id=${id}&merchantId=${this.merchantId}`;
+        },
       },
     });
   </script>

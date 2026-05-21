@@ -174,7 +174,8 @@
         <div class="result-msg">{{ resultMsg }}</div>
         <div class="result-btns">
           <button class="btn-secondary" @click="closeResult">关闭</button>
-          <button v-if="resultSuccess" class="btn-primary" style="background:var(--primary);color:#fff" @click="location.href='voucher-list.html'">再逛逛</button>
+          <button v-if="resultSuccess" class="btn-primary" style="background:var(--primary);color:#fff"
+                  @click="backToMerchant">返回商家</button>
         </div>
       </div>
     </div>
@@ -252,6 +253,10 @@
           this.resultVisible = true;
         },
         closeResult() { this.resultVisible = false; },
+        backToMerchant() {
+          const mid = Utils.getParam('merchantId') || Utils.getParam('shopId');
+          location.href = mid ? `product-list.html?merchantId=${mid}&tab=vouchers` : 'shop-list.html?mode=voucher';
+        },
         formatRange(start, end) {
           const f = d => Utils.formatDate(d);
           if (!start && !end) return '长期有效';
