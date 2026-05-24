@@ -31,3 +31,7 @@ spring:
           uri: lb://voucher-service
           predicates:
             - Path=/voucher/**, /seckill/**, /vouchers/**, /voucher-orders/**
+        - id: diet-service
+          uri: lb://diet-service
+          predicates:
+            - Path=/diet/**

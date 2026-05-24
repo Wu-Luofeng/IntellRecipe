@@ -31,10 +31,12 @@ public class MerchantServiceImpl extends ServiceImpl<MerchantMapper, Merchant> i
             return queryFromDb(limit, lastId);
         }
 
-        // 2. 首页查询，走逻辑过期缓存
+        // 2. 首页查询，走逻辑过期缓存（key 含 limit，避免不同分页大小污染同一缓存）
+        String cacheKey = RedisConstants.MERCHANT_FIRSTPAGE_KEY + ":" + limit;
+        String lockKey  = RedisConstants.LOCK_KEY + ":" + limit;
         return cacheClient.queryWithLogicalExpire(
-                RedisConstants.MERCHANT_FIRSTPAGE_KEY,
-                RedisConstants.LOCK_KEY,
+                cacheKey,
+                lockKey,
                 ScrollResult.class,
                 () -> queryFromDb(limit, null),
                 30L,

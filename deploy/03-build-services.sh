@@ -11,4 +11,5 @@ ls -lh \
   intellrecipe-gateway/target/*.jar \
   user-service/target/*.jar \
   item-service/target/*.jar \
-  voucher-service/target/*.jar
+  voucher-service/target/*.jar \
+  diet-service/target/*.jar

@@ -94,20 +94,33 @@
         <img id="avatarImg" src="" alt="头像">
       </div>
     </div>
-    <div class="nutrition-card">
+    <!-- 每日营养卡（真实数据） -->
+    <div class="nutrition-card" onclick="location.href='diet-log.html'" style="cursor:pointer">
       <div class="nc-row">
-        <span class="nc-label">今日摄入（演示数据）</span>
-        <span class="nc-val">1240 / 2000 千卡</span>
+        <span class="nc-label" id="ncLabel">今日摄入</span>
+        <span class="nc-val" id="ncVal">加载中…</span>
       </div>
-      <div class="nc-bar"><div class="nc-fill" style="width:62%"></div></div>
+      <div class="nc-bar"><div class="nc-fill" id="ncFill" style="width:0%"></div></div>
       <div class="nc-stats">
-        <div class="nc-stat"><div class="nc-stat-val">48g</div><div class="nc-stat-lbl">蛋白质</div></div>
+        <div class="nc-stat">
+          <div class="nc-stat-val" id="ncItems">-</div>
+          <div class="nc-stat-lbl">食材数</div>
+        </div>
         <div class="nc-divider"></div>
-        <div class="nc-stat"><div class="nc-stat-val">162g</div><div class="nc-stat-lbl">碳水</div></div>
+        <div class="nc-stat">
+          <div class="nc-stat-val" id="ncMeals">-</div>
+          <div class="nc-stat-lbl">餐次</div>
+        </div>
         <div class="nc-divider"></div>
-        <div class="nc-stat"><div class="nc-stat-val">36g</div><div class="nc-stat-lbl">脂肪</div></div>
+        <div class="nc-stat">
+          <div class="nc-stat-val" id="ncRemain">-</div>
+          <div class="nc-stat-lbl">剩余可摄</div>
+        </div>
         <div class="nc-divider"></div>
-        <div class="nc-stat"><div class="nc-stat-val">8g</div><div class="nc-stat-lbl">膳食纤维</div></div>
+        <div class="nc-stat">
+          <div class="nc-stat-val" id="ncGoal">2000</div>
+          <div class="nc-stat-lbl">目标(千卡)</div>
+        </div>
       </div>
     </div>
   </div>
@@ -140,11 +153,11 @@
         </div>
         <span class="grid-label">健康报告</span>
       </div>
-      <div class="grid-item" onclick="Utils.toast('饮食记录开发中')">
+      <div class="grid-item" onclick="location.href='diet-log.html'">
         <div class="grid-icon" style="background:#26A69A">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.05zM1 21.99V21h15.03v.99c0 .55-.45 1-1.01 1H2.01c-.56 0-1.01-.45-1.01-1zm15.03-7c0-2.47-1.96-5.99-7.51-5.99C2.96 8.99 1 12.51 1 15h15.03z"/></svg>
         </div>
-        <span class="grid-label">饮食记录</span>
+        <span class="grid-label">今日食谱</span>
       </div>
       <div class="grid-item" onclick="Utils.toast('食谱推荐开发中')">
         <div class="grid-icon" style="background:#FFA726">
@@ -219,10 +232,6 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
       <span>商家</span>
     </div>
-    <div class="nav-item" onclick="location.href='shop-list.html?mode=voucher'">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v4c1.1 0 2 .9 2 2s-.9 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2z"/></svg>
-      <span>优惠券</span>
-    </div>
     <div class="nav-item" onclick="location.href='profile.html'">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
       <span>我的</span>
@@ -239,6 +248,39 @@
       const info = await Utils.fetchUserInfo();
       document.getElementById('greeting').textContent = `${greet}，${info?.nickname || '朋友'}`;
       document.getElementById('avatarImg').src = Utils.avatar(info?.icon);
+    })();
+
+    // 加载真实今日食谱热量数据
+    (async () => {
+      const GOAL = 2000;
+      try {
+        const res = await axios.get('/api/diet/today');
+        const data = res.data?.data;
+        if (!data) return;
+
+        const total = Math.round(parseFloat(data.totalCalories || 0));
+        const entries = data.entries || [];
+        const mealSet = new Set(entries.map(e => e.mealType));
+        const remaining = GOAL - total;
+        const pct = Math.min(Math.round(total / GOAL * 100), 100);
+
+        document.getElementById('ncLabel').textContent = '今日摄入热量';
+        document.getElementById('ncVal').textContent = `${total} / ${GOAL} 千卡`;
+        document.getElementById('ncFill').style.width = pct + '%';
+        document.getElementById('ncItems').textContent = entries.length;
+        document.getElementById('ncMeals').textContent = mealSet.size;
+        document.getElementById('ncRemain').textContent = remaining >= 0
+          ? remaining + ' kcal'
+          : '超' + (-remaining) + ' kcal';
+        document.getElementById('ncRemain').style.color = remaining < 0 ? '#ff5252' : '#fff';
+      } catch (e) {
+        // 未登录或请求失败时，提示用户记录食谱
+        document.getElementById('ncLabel').textContent = '今日摄入热量';
+        document.getElementById('ncVal').textContent = '点此记录今日食谱';
+        document.getElementById('ncItems').textContent = '0';
+        document.getElementById('ncMeals').textContent = '0';
+        document.getElementById('ncRemain').textContent = '2000 kcal';
+      }
     })();
   </script>
 </body>

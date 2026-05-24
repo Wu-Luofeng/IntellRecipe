@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PID_DIR="${SCRIPT_DIR}/pids"
 
-for module in intellrecipe-gateway voucher-service item-service user-service; do
+for module in intellrecipe-gateway voucher-service diet-service item-service user-service; do
   pid_file="${PID_DIR}/${module}.pid"
   if [ ! -f "${pid_file}" ]; then
     echo "${module} is not tracked"

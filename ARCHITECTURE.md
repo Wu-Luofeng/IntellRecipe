@@ -166,8 +166,8 @@ location /api/ {
 | 商品列表 | `product-list.html` | 商品展示 |
 | 商品详情 | `product-detail.html` | 商品信息 |
 | 食材列表 | `ingredient-list.html` | `/api/ingredient/list` |
-| 优惠券列表 | `voucher-list.html` | |
-| 优惠券详情 | `voucher-detail.html` | 秒杀入口 |
+| 商家详情（含领券） | `product-list.html?merchantId=xx&tab=vouchers` | `/api/vouchers/list/{shopId}` |
+| 优惠券详情 | `voucher-detail.html` | 秒杀/领取入口 |
 
 页面统一通过 `/api/` 前缀调用后端，由 Nginx 转发到 Gateway。CDN 使用 BootCDN（Vue / axios）。
 

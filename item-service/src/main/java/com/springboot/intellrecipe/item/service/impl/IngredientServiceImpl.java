@@ -49,10 +49,12 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
                 return queryFromDb(limit, lastId);
             }
 
-            // 2. 首页查询，走通用缓存逻辑
+            // 2. 首页查询，走通用缓存逻辑（key 含 limit，避免不同分页大小污染同一缓存）
+            String cacheKey = RedisConstants.INGREDIENT_FIRSTPAGE_KEY + ":" + limit;
+            String lockKey  = RedisConstants.LOCK_INGREDIENT_KEY + ":" + limit;
             return cacheClient.queryWithLogicalExpire(
-                    RedisConstants.INGREDIENT_FIRSTPAGE_KEY,
-                    RedisConstants.LOCK_INGREDIENT_KEY,
+                    cacheKey,
+                    lockKey,
                     ScrollResult.class,
                     () -> queryFromDb(limit, null),
                     30L,

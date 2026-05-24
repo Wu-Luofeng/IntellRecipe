@@ -22,6 +22,7 @@
     <module>voucher-service</module>
     <module>item-service</module>
     <module>intellrecipe-gateway</module>
+    <module>diet-service</module>
   </modules>
 
   <properties>

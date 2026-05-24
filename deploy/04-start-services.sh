@@ -49,4 +49,5 @@ start_service() {
 start_service user-service
 start_service item-service
 start_service voucher-service
+start_service diet-service
 start_service intellrecipe-gateway
