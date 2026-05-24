@@ -273,7 +273,23 @@ nohup java -jar target/item-service-*.jar > logs/item.log 2>&1 &
 
 ---
 
-## 十一、待完成 / 优化方向
+## 十二、AI 助手工作规范
+
+> **每次对话开始时必须读取本文档**，保持上下文。
+
+### 代码修改后必须执行 git add + commit
+
+每次完成代码修改后，**不等用户提醒**，主动执行：
+
+```powershell
+git -C "E:\study\大三\springboot\IntellRecipe" add -A
+git -C "E:\study\大三\springboot\IntellRecipe" commit -m "feat/fix/refactor: 简短描述"
+```
+
+注意事项：
+- Windows PowerShell 不支持 `&&` 连接命令，要**分两行**执行
+- commit message 用英文，格式 `feat:` / `fix:` / `refactor:` 前缀
+- Heredoc (`<<'EOF'`) 在 PowerShell 中不可用，`-m` 只传单行字符串
 
 - [ ] 图片迁移至 OSS（阿里云/腾讯云 COS/MinIO）
 - [ ] CDN 加速图片资源
