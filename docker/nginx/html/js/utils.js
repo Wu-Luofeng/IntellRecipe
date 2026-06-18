@@ -1,4 +1,4 @@
-/**
+﻿/**
  * IntellRecipe 全局工具库
  * 所有页面在 axios.min.js + request.js 之后引入
  */
@@ -18,7 +18,7 @@ const Utils = {
 
   /* ── 登录态检查（未登录则跳转） ── */
   requireLogin() {
-    if (!this.getToken()) {
+    if (!this.getToken() && !sessionStorage.getItem('guestMode')) {
       sessionStorage.setItem('redirectAfterLogin', window.location.href);
       window.location.href = 'login.html';
       return false;
@@ -30,6 +30,7 @@ const Utils = {
   logout() {
     this.removeToken();
     this.removeUserInfo();
+    sessionStorage.removeItem('guestMode');
     window.location.href = 'login.html';
   },
 
@@ -83,7 +84,12 @@ const Utils = {
     return null;
   },
 
+    isGuestMode() { return !this.getToken() && !!sessionStorage.getItem('guestMode'); },
+  clearGuestMode() { sessionStorage.removeItem('guestMode'); },
+
   /* ── 默认头像（当 icon 为空时用） ── */
   defaultAvatar: 'https://api.dicebear.com/7.x/thumbs/svg?seed=IntellRecipe',
   avatar(icon) { return icon && icon.trim() ? icon : this.defaultAvatar; },
 };
+
+
