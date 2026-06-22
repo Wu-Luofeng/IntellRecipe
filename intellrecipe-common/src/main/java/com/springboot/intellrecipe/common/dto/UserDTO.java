@@ -1,4 +1,4 @@
-package com.springboot.intellrecipe.common.dto;
+﻿package com.springboot.intellrecipe.common.dto;
 
 import lombok.Data;
 import java.io.Serializable;
@@ -10,5 +10,9 @@ public class UserDTO implements Serializable {
     private String phone;
     private String nickname;
     private String icon;
+    private Double height;
+    private Double weight;
+    private Integer age;
+    private Integer gender;
     private LocalDateTime createTime;
 }

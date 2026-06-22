@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -168,7 +168,11 @@
       btn.style.pointerEvents = 'none';
 
       try {
-        const res = await axios.put('/api/user/profile', { nickname, icon: currentIconUrl });
+        const height = parseFloat(document.getElementById('height').value) || null;
+        const weight = parseFloat(document.getElementById('weight').value) || null;
+        const age = parseInt(document.getElementById('age').value) || null;
+        const gender = document.getElementById('gender').value !== '' ? parseInt(document.getElementById('gender').value) : null;
+        const res = await axios.put('/api/user/profile', { nickname, icon: currentIconUrl, height, weight, age, gender });
         if (res.data.success) {
           Utils.removeUserInfo();
           Utils.toast('保存成功');

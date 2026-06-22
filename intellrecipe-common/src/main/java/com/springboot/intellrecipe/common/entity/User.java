@@ -1,4 +1,4 @@
-package com.springboot.intellrecipe.common.entity;
+﻿package com.springboot.intellrecipe.common.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -46,6 +46,26 @@ public class User implements Serializable {
      */
     @TableField("avatar")
     private String icon = "";
+
+    /**
+     * 身高(cm)
+     */
+    private Double height;
+
+    /**
+     * 体重(kg)
+     */
+    private Double weight;
+
+    /**
+     * 年龄
+     */
+    private Integer age;
+
+    /**
+     * 性别 0:女 1:男
+     */
+    private Integer gender;
 
     /**
      * 创建时间

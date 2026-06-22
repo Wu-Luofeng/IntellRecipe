@@ -1,4 +1,4 @@
-package com.springboot.intellrecipe.service.impl;
+﻿package com.springboot.intellrecipe.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.UUID;
@@ -157,6 +157,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (StrUtil.isNotBlank(profileDTO.getIcon())) {
             user.setIcon(profileDTO.getIcon());
         }
+        if (profileDTO.getHeight() != null) user.setHeight(profileDTO.getHeight());
+        if (profileDTO.getWeight() != null) user.setWeight(profileDTO.getWeight());
+        if (profileDTO.getAge() != null) user.setAge(profileDTO.getAge());
+        if (profileDTO.getGender() != null) user.setGender(profileDTO.getGender());
         updateById(user);
 
         // 同步更新 Redis Hash，让 RefreshTokenInterceptor 立即读取到新值

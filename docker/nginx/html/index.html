@@ -239,7 +239,14 @@
 
     // 加载真实今日食谱热量数据
     (async () => {
-      const GOAL = 2000;
+      var GOAL = 2000;
+      try {
+        var info = await Utils.fetchUserInfo();
+        if (info && info.gender != null && info.weight != null && info.height != null && info.age != null) {
+          var bmr = 10 * info.weight + 6.25 * info.height - 5 * info.age + (info.gender === 1 ? 5 : -161);
+          GOAL = Math.round(bmr);
+        }
+      } catch (_) {}
       try {
         const res = await axios.get('/api/diet/today');
         const data = res.data?.data;
