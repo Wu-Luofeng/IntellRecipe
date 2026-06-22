@@ -261,12 +261,12 @@
           : '超' + (-remaining) + ' kcal';
         document.getElementById('ncRemain').style.color = remaining < 0 ? '#ff5252' : '#fff';
       } catch (e) {
-        // 未登录或请求失败时，提示用户记录食谱
+        // 未登录或请求失败时，显示占位符
         document.getElementById('ncLabel').textContent = '今日摄入热量';
-        document.getElementById('ncVal').textContent = '点此记录今日食谱';
-        document.getElementById('ncItems').textContent = '0';
-        document.getElementById('ncMeals').textContent = '0';
-        document.getElementById('ncRemain').textContent = '2000 kcal';
+        document.getElementById('ncVal').textContent = '- - / 2000 千卡';
+        document.getElementById('ncItems').textContent = '-';
+        document.getElementById('ncMeals').textContent = '-';
+        document.getElementById('ncRemain').textContent = '- -';
       }
     })();
 
