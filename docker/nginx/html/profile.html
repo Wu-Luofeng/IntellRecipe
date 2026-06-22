@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -190,11 +190,17 @@
   <script src="js/request.js"></script>
   <script src="js/utils.js"></script>
   <script>
-    Utils.requireLogin();
 
     (async () => {
       const info = await Utils.fetchUserInfo(true);
-      if (!info) return;
+      if (!info) {
+        document.getElementById('avatarImg').src = Utils.defaultAvatar;
+        document.getElementById('profileName').textContent = '未登录';
+        document.getElementById('profilePhone').textContent = '点击登录';
+        document.getElementById('profilePhone').style.cursor = 'pointer';
+        document.getElementById('profilePhone').onclick = function() { window.location.href = 'login.html'; };
+        return;
+      }
       document.getElementById('avatarImg').src  = Utils.avatar(info.icon);
       document.getElementById('profileName').textContent  = info.nickname || '未设置昵称';
       document.getElementById('profilePhone').textContent = Utils.maskPhone(info.phone);
