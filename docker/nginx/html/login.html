@@ -177,6 +177,13 @@
       }
     }
 
+    function skipLogin() {
+      sessionStorage.setItem('guestMode', 'true');
+      const redir = sessionStorage.getItem('redirectAfterLogin');
+      sessionStorage.removeItem('redirectAfterLogin');
+      window.location.replace(redir || 'index.html');
+    }
+
     // Enter 键触发登录
     document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
   </script>
