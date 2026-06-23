@@ -91,6 +91,34 @@
         </div>
         <div class="form-row">
           <span class="form-label">注册时间</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card" style="margin-top:16px">
+      <div class="form-row">
+        <span class="form-label">性别</span>
+        <select class="form-input" id="gender" style="text-align:right;direction:rtl">
+          <option value="">未设置</option>
+          <option value="1">男</option>
+          <option value="0">女</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <span class="form-label">身高</span>
+        <input class="form-input" id="height" type="number" step="0.1" min="50" max="250" placeholder="cm">
+      </div>
+      <div class="form-row">
+        <span class="form-label">体重</span>
+        <input class="form-input" id="weight" type="number" step="0.1" min="20" max="300" placeholder="kg">
+      </div>
+      <div class="form-row">
+        <span class="form-label">年龄</span>
+        <input class="form-input" id="age" type="number" min="1" max="150" placeholder="岁">
+      </div>
+    </div>
+
+    <div class="save-wrap">
           <input class="form-input" id="createTime" type="text" readonly style="color:var(--text-hint)">
         </div>
       </div>
