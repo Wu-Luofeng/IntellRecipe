@@ -122,6 +122,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             if (userDTO.getIcon() != null) {
                 userMap.put("icon", userDTO.getIcon());
             }
+            if (userDTO.getHeight() != null) {
+                userMap.put("height", userDTO.getHeight().toString());
+            }
+            if (userDTO.getWeight() != null) {
+                userMap.put("weight", userDTO.getWeight().toString());
+            }
+            if (userDTO.getAge() != null) {
+                userMap.put("age", userDTO.getAge().toString());
+            }
+            if (userDTO.getGender() != null) {
+                userMap.put("gender", userDTO.getGender().toString());
+            }
 
             String tokenKey = RedisConstants.LOGIN_USER_KEY + token;
             stringRedisTemplate.opsForHash().putAll(tokenKey, userMap);
@@ -171,6 +183,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             if (StrUtil.isNotBlank(profileDTO.getIcon())) {
                 updates.put("icon", profileDTO.getIcon());
             }
+            if (profileDTO.getHeight() != null) {
+                updates.put("height", profileDTO.getHeight().toString());
+            }
+            if (profileDTO.getWeight() != null) {
+                updates.put("weight", profileDTO.getWeight().toString());
+            }
+            if (profileDTO.getAge() != null) {
+                updates.put("age", profileDTO.getAge().toString());
+            }
+            if (profileDTO.getGender() != null) {
+                updates.put("gender", profileDTO.getGender().toString());
+            }
             stringRedisTemplate.opsForHash().putAll(key, updates);
         }
 
@@ -191,3 +215,4 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return user;
     }
 }
+

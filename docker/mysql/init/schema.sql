@@ -9,6 +9,10 @@ CREATE TABLE `user` (
   `nickname` varchar(50) DEFAULT NULL COMMENT '昵称',
   `password` varchar(100) DEFAULT NULL COMMENT '密码',
   `avatar` varchar(255) DEFAULT NULL COMMENT '头像',
+  `height` decimal(5,1) DEFAULT NULL COMMENT '身高(cm)',
+  `weight` decimal(5,1) DEFAULT NULL COMMENT '体重(kg)',
+  `age` int DEFAULT NULL COMMENT '年龄',
+  `gender` tinyint DEFAULT NULL COMMENT '性别 0:女 1:男',
   `status` tinyint DEFAULT 0 COMMENT '状态 0:正常 1:禁用',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -121,3 +125,5 @@ CREATE TABLE `voucher_order` (
   KEY `idx_user_id` (`user_id`),
   KEY `idx_voucher_id` (`voucher_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='优惠券订单表';
+
+
