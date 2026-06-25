@@ -231,7 +231,7 @@
     (async () => {
       const hours = new Date().getHours();
       const greet = hours < 6 ? '夜深了' : hours < 11 ? '早上好' : hours < 14 ? '中午好' : hours < 18 ? '下午好' : '晚上好';
-      const info = await Utils.fetchUserInfo();
+      const info = await Utils.fetchUserInfo(true);
       document.getElementById('greeting').textContent = `${greet}，${info?.nickname || '朋友'}`;
       document.getElementById('avatarImg').src = Utils.avatar(info?.icon);
     })();
@@ -241,7 +241,7 @@
     (async () => {
       var GOAL = 2000;
       try {
-        var info = await Utils.fetchUserInfo();
+        var info = await Utils.fetchUserInfo(true);
         if (info && info.gender != null && info.weight != null && info.height != null && info.age != null) {
           var bmr = 10 * info.weight + 6.25 * info.height - 5 * info.age + (info.gender === 1 ? 5 : -161);
           GOAL = Math.round(bmr);

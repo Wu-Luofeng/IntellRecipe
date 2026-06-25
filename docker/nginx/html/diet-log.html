@@ -531,7 +531,7 @@ new Vue({
     Utils.requireLogin();
     (async () => {
       try {
-        const info = await Utils.fetchUserInfo();
+        const info = await Utils.fetchUserInfo(true);
         if (info && info.gender != null && info.weight != null && info.height != null && info.age != null) {
           var bmr = 10 * info.weight + 6.25 * info.height - 5 * info.age + (info.gender === 1 ? 5 : -161);
           this.dailyGoal = Math.round(bmr);
