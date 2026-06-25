@@ -139,6 +139,11 @@
       document.getElementById('nickname').value  = info.nickname || '';
       document.getElementById('phone').value     = Utils.maskPhone(info.phone);
       document.getElementById('createTime').value = Utils.formatDate(info.createTime) || '—';
+      // 填充体测数据
+      if (info.gender != null) document.getElementById('gender').value = info.gender;
+      if (info.height != null) document.getElementById('height').value = info.height;
+      if (info.weight != null) document.getElementById('weight').value = info.weight;
+      if (info.age != null) document.getElementById('age').value = info.age;
     })();
 
     async function handleFile(input) {
