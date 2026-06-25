@@ -163,7 +163,7 @@
   </div>
 
   <div style="height: 12px;"></div>
-  <button class="logout-btn" onclick="confirmLogout()">退出登录</button>
+  <button id="logoutBtn" class="logout-btn" onclick="confirmLogout()">退出登录</button>
   <div style="height: 16px;"></div>
 
   <!-- 底部导航 -->
@@ -199,6 +199,7 @@
         document.getElementById('profilePhone').textContent = '点击登录';
         document.getElementById('profilePhone').style.cursor = 'pointer';
         document.getElementById('profilePhone').onclick = function() { window.location.href = 'login.html'; };
+        document.getElementById('logoutBtn').style.display = 'none';
         return;
       }
       document.getElementById('avatarImg').src  = Utils.avatar(info.icon);
