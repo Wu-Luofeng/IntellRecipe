@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -229,7 +229,7 @@
       <div class="rs-row">
         <div class="rs-dot" style="background:#f5a623"></div>
         <span class="rs-name">建议每日摄入</span>
-        <span class="rs-val">2000 kcal</span>
+        <span class="rs-val">{{ dailyGoal || 2000 }} kcal</span>
       </div>
       <div class="rs-row">
         <div class="rs-dot" style="background:#e8e8e8"></div>
@@ -380,6 +380,7 @@ new Vue({
   el: '#app',
   data: {
     loading: false,
+    dailyGoal: null,
     entries: [],
     mealTypes: MEAL_TYPES,
     activeMeal: -1,
@@ -408,13 +409,13 @@ new Vue({
       return this.entries.reduce((s, e) => s + parseFloat(e.calories || 0), 0);
     },
     remaining() {
-      return 2000 - this.totalCalories;
+      return (this.dailyGoal || 2000) - this.totalCalories;
     },
     circumference() {
       return 2 * Math.PI * 48;
     },
     dashOffset() {
-      const ratio = Math.min(this.totalCalories / 2000, 1);
+      const ratio = Math.min(this.totalCalories / (this.dailyGoal || 2000), 1);
       return this.circumference * (1 - ratio);
     },
     activeMealName() {
@@ -528,6 +529,15 @@ new Vue({
   },
   created() {
     Utils.requireLogin();
+    (async () => {
+      try {
+        const info = await Utils.fetchUserInfo();
+        if (info && info.gender != null && info.weight != null && info.height != null && info.age != null) {
+          var bmr = 10 * info.weight + 6.25 * info.height - 5 * info.age + (info.gender === 1 ? 5 : -161);
+          this.dailyGoal = Math.round(bmr);
+        }
+      } catch (_) {}
+    })();
     this.loadToday();
   }
 });
