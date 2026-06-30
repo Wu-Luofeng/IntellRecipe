@@ -1,6 +1,8 @@
-package com.springboot.intellrecipe.voucher.service.impl;
+﻿package com.springboot.intellrecipe.voucher.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.springboot.intellrecipe.common.dto.MyVoucherDTO;
+import com.springboot.intellrecipe.common.dto.Result;
 import com.springboot.intellrecipe.common.dto.VoucherOrderDTO;
 import com.springboot.intellrecipe.common.entity.Voucher;
 import com.springboot.intellrecipe.common.entity.VoucherOrder;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements VoucherOrderService {
@@ -96,5 +99,12 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             voucherOrder.setUpdateTime(LocalDateTime.now());
             save(voucherOrder);
         }
+    }
+
+    @Override
+    public Result queryMyVouchers() {
+        Long userId = UserHolder.getUser().getId();
+        List<MyVoucherDTO> vouchers = baseMapper.selectMyVouchers(userId);
+        return Result.ok(vouchers);
     }
 }

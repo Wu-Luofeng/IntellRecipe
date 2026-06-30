@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -123,7 +123,7 @@
       <div v-if="voucher.type===1" class="stock-section" style="margin-top:16px">
         <div class="stock-label">
           <span>库存</span>
-          <span class="remain">仅剩 {{ voucher.stock }} 张</span>
+          <span class="remain">仅剩 {{ voucher.stock > 0 ? voucher.stock : '0' }} 张</span>
         </div>
         <div class="stock-bar">
           <div class="stock-fill" :style="{width: stockPct + '%'}"></div>

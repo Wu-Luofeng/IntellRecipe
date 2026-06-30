@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -128,9 +128,9 @@
               <div class="v-full-sub">{{ v.subTitle || ('满 ' + formatYuan(v.payValue) + ' 元可用') }}</div>
               <div class="v-full-actions">
                 <button :class="['v-buy-btn', v.type===1?'seckill':'']"
-                        :disabled="buyingId===v.id"
+                        :disabled="buyingId===v.id || (v.type===1 && v.stock<=0)"
                         @click="buyVoucher(v)">
-                  {{ buyingId===v.id ? '处理中…' : (v.type===1 ? '立即抢购' : '立即领取') }}
+                  {{ buyingId===v.id ? '处理中…' : (v.type===1 ? (v.stock>0 ? '立即抢购' : '已抢完') : '立即领取') }}
                 </button>
                 <span class="v-detail-link" @click="goVoucherDetail(v.id)">查看详情 ›</span>
               </div>
