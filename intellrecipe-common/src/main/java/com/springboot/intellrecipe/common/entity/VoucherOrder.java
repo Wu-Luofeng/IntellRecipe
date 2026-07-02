@@ -31,6 +31,8 @@ public class VoucherOrder implements Serializable {
 
     private LocalDateTime createTime;
 
+    private LocalDateTime expireTime;
+
     private LocalDateTime payTime;
 
     private LocalDateTime useTime;

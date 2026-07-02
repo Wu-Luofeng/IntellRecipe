@@ -39,6 +39,11 @@ public class Voucher implements Serializable {
 
     private Integer status;
 
+    /**
+     * 有效期（天），购买后优惠券在此天数后过期
+     */
+    private Integer validityDays;
+
     @TableField(exist = false)
     private Integer stock;
 

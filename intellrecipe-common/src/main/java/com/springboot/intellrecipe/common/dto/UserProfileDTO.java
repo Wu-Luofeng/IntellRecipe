@@ -1,4 +1,4 @@
-﻿package com.springboot.intellrecipe.common.dto;
+package com.springboot.intellrecipe.common.dto;
 
 import lombok.Data;
 

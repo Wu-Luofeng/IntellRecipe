@@ -1,4 +1,4 @@
-﻿package com.springboot.intellrecipe.voucher.controller;
+package com.springboot.intellrecipe.voucher.controller;
 
 import com.springboot.intellrecipe.common.dto.Result;
 import com.springboot.intellrecipe.voucher.service.VoucherOrderService;

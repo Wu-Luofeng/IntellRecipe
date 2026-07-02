@@ -1,4 +1,4 @@
-﻿package com.springboot.intellrecipe.common.entity;
+package com.springboot.intellrecipe.common.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;

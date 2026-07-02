@@ -1,4 +1,4 @@
-server:
+﻿server:
   port: 10010
 
 spring:
@@ -35,3 +35,7 @@ spring:
           uri: lb://diet-service
           predicates:
             - Path=/diet/**
+        - id: recipe-service
+          uri: lb://recipe-service
+          predicates:
+            - Path=/recipe/**

@@ -1,4 +1,4 @@
-﻿package com.springboot.intellrecipe.voucher.service;
+package com.springboot.intellrecipe.voucher.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.springboot.intellrecipe.common.dto.Result;

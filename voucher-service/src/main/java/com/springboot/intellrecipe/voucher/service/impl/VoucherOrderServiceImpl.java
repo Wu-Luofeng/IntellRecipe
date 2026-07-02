@@ -1,4 +1,4 @@
-﻿package com.springboot.intellrecipe.voucher.service.impl;
+package com.springboot.intellrecipe.voucher.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.springboot.intellrecipe.common.dto.MyVoucherDTO;
@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder> implements VoucherOrderService {
@@ -89,14 +90,22 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
         // 2. 保存订单
         if (success) {
+            LocalDateTime now = LocalDateTime.now();
             VoucherOrder voucherOrder = new VoucherOrder();
             voucherOrder.setId(voucherOrderDTO.getOrderId());
             voucherOrder.setUserId(userId);
             voucherOrder.setVoucherId(voucherId);
             voucherOrder.setPayType(1);
             voucherOrder.setStatus(1);
-            voucherOrder.setCreateTime(LocalDateTime.now());
-            voucherOrder.setUpdateTime(LocalDateTime.now());
+            voucherOrder.setCreateTime(now);
+            voucherOrder.setUpdateTime(now);
+
+            // 设置过期时间 = 创建时间 + 有效期
+            Voucher voucher = voucherService.getById(voucherId);
+            if (voucher != null && voucher.getValidityDays() != null && voucher.getValidityDays() > 0) {
+                voucherOrder.setExpireTime(now.plusDays(voucher.getValidityDays()));
+            }
+
             save(voucherOrder);
         }
     }
@@ -104,7 +113,15 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Override
     public Result queryMyVouchers() {
         Long userId = UserHolder.getUser().getId();
+
+        // 惰性过期：先将已过期的优惠券状态置为0
+        baseMapper.updateExpiredVouchers();
+
+        // 查询并过滤掉已过期的优惠券（status=0），前端不展示
         List<MyVoucherDTO> vouchers = baseMapper.selectMyVouchers(userId);
-        return Result.ok(vouchers);
+        List<MyVoucherDTO> activeVouchers = vouchers.stream()
+                .filter(v -> v.getStatus() != null && v.getStatus() == 1)
+                .collect(Collectors.toList());
+        return Result.ok(activeVouchers);
     }
 }
