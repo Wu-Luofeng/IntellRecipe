@@ -6,6 +6,8 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.math.BigDecimal;
+
 @Data
 @Document(indexName = "ingredient")
 public class IngredientDoc {
@@ -33,8 +35,14 @@ public class IngredientDoc {
     private String image;
 
     /**
-     * 营养值，不分词
+     * 营养值文案，不分词
      */
     @Field(type = FieldType.Keyword, index = false)
     private String nutritionValue;
+
+    /**
+     * 每100g热量(千卡)，数值型，不分词
+     */
+    @Field(type = FieldType.Double, index = false)
+    private BigDecimal caloriesPer100g;
 }

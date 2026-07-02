@@ -1,10 +1,12 @@
 package com.springboot.intellrecipe.diet.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.springboot.intellrecipe.common.entity.Ingredient;
 import com.springboot.intellrecipe.diet.dto.AddEntryDTO;
 import com.springboot.intellrecipe.diet.dto.TodayDietVO;
 import com.springboot.intellrecipe.diet.entity.DietLog;
 import com.springboot.intellrecipe.diet.mapper.DietLogMapper;
+import com.springboot.intellrecipe.diet.mapper.IngredientMapper;
 import com.springboot.intellrecipe.diet.service.DietService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 public class DietServiceImpl implements DietService {
 
     private final DietLogMapper dietLogMapper;
+    private final IngredientMapper ingredientMapper;
 
     @Override
     public TodayDietVO getToday(Long userId) {
@@ -55,11 +58,19 @@ public class DietServiceImpl implements DietService {
             throw new IllegalArgumentException("克数必须大于0");
         }
 
+        // 从食材表查询食材名称和热量（热量数据的源头在食材表）
+        Ingredient ingredient = ingredientMapper.selectById(dto.getIngredientId());
+        if (ingredient == null) {
+            throw new IllegalArgumentException("食材不存在");
+        }
+
         DietLog log = new DietLog();
         log.setUserId(userId);
-        log.setIngredientId(dto.getIngredientId());
-        log.setIngredientName(dto.getIngredientName() != null ? dto.getIngredientName() : "未知食材");
-        log.setCaloriesPer100g(dto.getCaloriesPer100g() != null ? dto.getCaloriesPer100g() : BigDecimal.ZERO);
+        log.setIngredientId(ingredient.getId());
+        log.setIngredientName(ingredient.getName());
+        // 热量作为快照写入 diet_log，防止食材热量后续修改影响历史记录
+        log.setCaloriesPer100g(ingredient.getCaloriesPer100g() != null
+                ? ingredient.getCaloriesPer100g() : BigDecimal.ZERO);
         log.setGrams(dto.getGrams());
         log.setMealType(dto.getMealType() != null ? dto.getMealType() : 0);
         log.setLogDate(LocalDate.now());

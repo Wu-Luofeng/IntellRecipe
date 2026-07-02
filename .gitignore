@@ -46,3 +46,8 @@ deploy/env.sh
 deploy/pids/
 deploy/SERVER_ACCESS.local.md
 *.local.md
+
+### 临时脚本（根目录一次性 .bat/.sh 调试脚本）###
+/*.bat
+/*.sh
+/int

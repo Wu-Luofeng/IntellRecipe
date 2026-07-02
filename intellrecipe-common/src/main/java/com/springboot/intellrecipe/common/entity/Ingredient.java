@@ -43,9 +43,14 @@ public class Ingredient implements Serializable {
     private BigDecimal calories;
 
     /**
-     * 单位热量值 (如: 50千卡/100g)
+     * 单位热量文案 (如: 50千卡/100g)
      */
     private String nutritionValue;
+
+    /**
+     * 每100g热量(千卡)，数值型，用于计算
+     */
+    private BigDecimal caloriesPer100g;
 
     private LocalDateTime createTime;
 

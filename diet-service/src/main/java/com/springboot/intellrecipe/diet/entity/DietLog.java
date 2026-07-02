@@ -23,7 +23,7 @@ public class DietLog implements Serializable {
 
     private String ingredientName;
 
-    /** 每 100g 热量（千卡），由前端从 nutritionValue 解析后传入 */
+    /** 每 100g 热量（千卡），从 ingredient 表查询后作为快照写入 */
     private BigDecimal caloriesPer100g;
 
     /** 实际摄入克数 */

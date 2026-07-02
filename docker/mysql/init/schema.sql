@@ -43,13 +43,29 @@ CREATE TABLE `ingredient` (
   `name` varchar(64) NOT NULL COMMENT '食材名称',
   `image` varchar(255) DEFAULT NULL COMMENT '食材图片',
   `description` varchar(500) DEFAULT NULL COMMENT '食材描述',
-  `nutrition_value` varchar(100) DEFAULT NULL COMMENT '单位热量值(如:50千卡/100g)',
+  `nutrition_value` varchar(100) DEFAULT NULL COMMENT '单位热量文案(如:50千卡/100g)',
+  `calories_per100g` decimal(8,1) DEFAULT NULL COMMENT '每100g热量(千卡)，数值型，用于计算',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint DEFAULT 0 COMMENT '逻辑删除 0:未删除 1:已删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='食材总表';
+
+DROP TABLE IF EXISTS `diet_log`;
+CREATE TABLE `diet_log` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
+  `ingredient_id` bigint(20) DEFAULT NULL COMMENT '食材ID',
+  `ingredient_name` varchar(64) NOT NULL COMMENT '食材名称(快照)',
+  `calories_per100g` decimal(8,1) DEFAULT 0 COMMENT '每100g热量(快照，千卡)',
+  `grams` decimal(8,1) NOT NULL COMMENT '摄入克数',
+  `meal_type` tinyint DEFAULT 0 COMMENT '0:早餐 1:午餐 2:晚餐 3:加餐',
+  `log_date` date NOT NULL COMMENT '记录日期',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_date` (`user_id`, `log_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='饮食记录表';
 
 DROP TABLE IF EXISTS `product`;
 CREATE TABLE `product` (
