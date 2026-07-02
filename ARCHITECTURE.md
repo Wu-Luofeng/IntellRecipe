@@ -6,6 +6,8 @@
 
 ## 一、云服务器信息
 
+> 📌 **开发环境统一部署目标**：本项目的开发/测试环境统一部署到下方云服务器，所有服务变更最终都要在此服务器上运行验证。
+
 | 项目 | 值 |
 |------|-----|
 | 云厂商 | 腾讯云 |
@@ -13,9 +15,23 @@
 | 主机名 | `VM-0-15-ubuntu` |
 | 公网 IP | `129.204.203.184` |
 | 系统 | Ubuntu |
+| SSH 端口 | `22` |
+| SSH 密码 | 见 `deploy/SERVER_ACCESS.local.md`（本地私有，已 gitignore） |
 | **项目根目录** | `/home/ubuntu/IntellRecipe`（即 `~/IntellRecipe`） |
 | compose 工作目录 | `~/IntellRecipe/docker` |
 | 启动基础设施 | `cd ~/IntellRecipe/docker && docker compose up -d` |
+
+### SSH 连接
+
+```bash
+# 标准登录（会提示输入密码，密码见 deploy/SERVER_ACCESS.local.md）
+ssh ubuntu@129.204.203.184
+
+# 免密登录配置见 deploy/SERVER_ACCESS.local.md
+```
+
+> 🔐 真实密码、密钥等敏感凭证只记录在 `deploy/SERVER_ACCESS.local.md`（已被 `.gitignore` 排除），
+> 仓库内文档不保存明文密码。如需获取密码，请查看该本地文件。
 
 ### 服务器目录结构（实际情况）
 

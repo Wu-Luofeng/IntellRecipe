@@ -44,3 +44,5 @@ tokens.txt
 logs/
 deploy/env.sh
 deploy/pids/
+deploy/SERVER_ACCESS.local.md
+*.local.md
