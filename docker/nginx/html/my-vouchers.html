@@ -76,11 +76,16 @@
         </template>
         <div v-else class="empty-state">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v4c1.1 0 2 .9 2 2s-.9 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2z"/></svg>
-          <span>暂无优惠券</span>
-          <p style="font-size:12px;color:var(--text-hint);margin-top:8px;text-align:center">
+          <span v-if="guestMode">请登录后查看</span>
+          <span v-else>暂无优惠券</span>
+          <p v-if="guestMode" style="font-size:12px;color:var(--text-hint);margin-top:8px;text-align:center">
+            登录后即可查看和管理您的优惠券
+          </p>
+          <p v-else style="font-size:12px;color:var(--text-hint);margin-top:8px;text-align:center">
             去商家页面领取优惠券吧
           </p>
-          <button class="btn btn-primary" style="margin-top:12px" @click="goShopList">去领券</button>
+          <button v-if="guestMode" class="btn btn-primary" style="margin-top:12px" @click="goLogin">去登录</button>
+          <button v-else class="btn btn-primary" style="margin-top:12px" @click="goShopList">去领券</button>
         </div>
       </div>
     </div>
@@ -96,11 +101,13 @@
       data: {
         vouchers: [],
         loading: false,
+        guestMode: false,
       },
       created() {
-        if (!Utils.requireLogin()) {
-          sessionStorage.setItem('redirectAfterLogin', location.href);
-          location.href = 'login.html';
+        if (!Utils.getToken()) {
+          // 未登录（含游客模式）— 显示提示，不跳转、不调 API
+          this.loading = false;
+          this.guestMode = true;
           return;
         }
         this.loadVouchers();
@@ -141,6 +148,10 @@
         },
         goShopList() {
           location.href = 'shop-list.html?mode=voucher';
+        },
+        goLogin() {
+          sessionStorage.setItem('redirectAfterLogin', location.href);
+          location.href = 'login.html';
         },
       },
     });

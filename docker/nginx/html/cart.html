@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>购物车 - IntellRecipe</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/theme.css">
+  <style>
+    .cart-list { padding: 12px 16px 120px; }
+    .cart-item {
+      display: flex; align-items: stretch; background: var(--bg-card);
+      border-radius: var(--radius-md); overflow: hidden;
+      box-shadow: var(--shadow-sm); margin-bottom: 12px;
+    }
+    .cart-check {
+      width: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    }
+    .cart-check-box {
+      width: 20px; height: 20px; border: 2px solid var(--text-hint);
+      border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all .2s;
+    }
+    .cart-check-box.checked {
+      background: var(--primary); border-color: var(--primary);
+    }
+    .cart-check-box.checked::after {
+      content: ''; width: 6px; height: 10px; border: 2px solid #fff;
+      border-top: 0; border-left: 0; transform: rotate(45deg) translate(-1px, -1px);
+    }
+    .cart-img {
+      width: 90px; height: 90px; flex-shrink: 0; object-fit: cover; border-radius: var(--radius-sm);
+    }
+    .cart-info {
+      flex: 1; padding: 10px 12px; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .cart-name {
+      font-size: 14px; font-weight: 600; line-height: 1.4;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .cart-price-row { display: flex; align-items: center; justify-content: space-between; }
+    .cart-price { font-size: 16px; font-weight: 700; color: var(--primary); }
+    .cart-price::before { content: '¥'; font-size: 12px; }
+    .cart-qty { display: flex; align-items: center; gap: 0; }
+    .qty-btn {
+      width: 28px; height: 28px; border: 1px solid var(--border); background: var(--bg-card);
+      font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      border-radius: 4px;
+    }
+    .qty-btn:active { background: var(--bg-tag); }
+    .qty-num {
+      width: 36px; height: 28px; text-align: center; font-size: 14px; font-weight: 600;
+      border: 1px solid var(--border); border-left: none; border-right: none; line-height: 28px;
+    }
+    .cart-del {
+      position: absolute; right: 12px; top: 10px; font-size: 12px; color: var(--text-hint);
+      cursor: pointer;
+    }
+    .cart-item-wrap { position: relative; }
+    .cart-footer {
+      position: fixed; bottom: var(--tabbar-h, 0); left: 0; right: 0;
+      background: var(--bg-card); box-shadow: 0 -2px 8px rgba(0,0,0,.06);
+      display: flex; align-items: center; padding: 10px 16px; gap: 12px; z-index: 100;
+    }
+    .cart-footer-check { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
+    .cart-footer-total { flex: 1; text-align: right; }
+    .cart-footer-total .label { font-size: 12px; color: var(--text-sub); }
+    .cart-footer-total .amount { font-size: 20px; font-weight: 700; color: var(--primary); }
+    .cart-footer-total .amount::before { content: '¥'; font-size: 14px; }
+    .cart-footer-btn {
+      padding: 10px 28px; border-radius: var(--radius-btn); border: none;
+      font-size: 16px; font-weight: 600; cursor: pointer; color: #fff;
+      background: var(--primary);
+    }
+    .cart-footer-btn:disabled { background: var(--text-hint); cursor: not-allowed; }
+    .load-tip { text-align: center; padding: 40px 20px; color: var(--text-hint); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="app-header">
+      <div class="back-btn" onclick="history.back()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </div>
+      <span class="page-title">购物车</span>
+      <span v-if="cartList.length" style="position:absolute;right:16px;font-size:14px;color:var(--text-sub);cursor:pointer" @click="clearCart">清空</span>
+    </div>
+
+    <div style="padding-top: var(--header-h)">
+      <div class="cart-list">
+        <div v-if="loading" class="load-tip">加载中…</div>
+        <template v-else-if="cartList.length">
+          <div v-for="item in cartList" :key="item.id" class="cart-item-wrap">
+            <div class="cart-item">
+              <div class="cart-check">
+                <div :class="['cart-check-box', item.selected===1?'checked':'']" @click="toggleSelect(item)"></div>
+              </div>
+              <img class="cart-img" :src="item.productImage || 'img/default-product.png'" :alt="item.productName" @error="onImgError">
+              <div class="cart-info">
+                <div class="cart-name">{{ item.productName }}</div>
+                <div class="cart-price-row">
+                  <span class="cart-price">{{ formatPrice(item.productPrice) }}</span>
+                  <div class="cart-qty">
+                    <div class="qty-btn" @click="changeQty(item, -1)">−</div>
+                    <div class="qty-num">{{ item.quantity }}</div>
+                    <div class="qty-btn" @click="changeQty(item, 1)">+</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <span class="cart-del" @click="removeItem(item)">删除</span>
+          </div>
+        </template>
+        <div v-else class="empty-state">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          <span v-if="guestMode">请登录后查看</span>
+          <span v-else>购物车空空如也</span>
+          <p v-if="guestMode" style="font-size:12px;color:var(--text-hint);margin-top:8px;text-align:center">
+            登录后即可使用购物车
+          </p>
+          <p v-else style="font-size:12px;color:var(--text-hint);margin-top:8px;text-align:center">
+            去逛逛吧，把喜欢的商品加入购物车
+          </p>
+          <button v-if="guestMode" class="btn btn-primary" style="margin-top:12px" @click="goLogin">去登录</button>
+          <button v-else class="btn btn-primary" style="margin-top:12px" @click="goShopList">去购物</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部结算栏 -->
+    <div v-if="cartList.length" class="cart-footer">
+      <div class="cart-footer-check" @click="toggleAll">
+        <div :class="['cart-check-box', allSelected?'checked':'']"></div>
+        <span>全选</span>
+      </div>
+      <div class="cart-footer-total">
+        <div class="label">合计：</div>
+        <div class="amount">{{ formatPrice(totalAmount) }}</div>
+      </div>
+      <button class="cart-footer-btn" :disabled="selectedCount===0" @click="checkout">
+        结算{{ selectedCount > 0 ? '(' + selectedCount + ')' : '' }}
+      </button>
+    </div>
+  </div>
+
+  <script src="js/vue.min.js"></script>
+  <script src="js/axios.min.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        cartList: [],
+        loading: false,
+        guestMode: false,
+      },
+      computed: {
+        allSelected() {
+          return this.cartList.length > 0 && this.cartList.every(i => i.selected === 1);
+        },
+        selectedCount() {
+          return this.cartList.filter(i => i.selected === 1).length;
+        },
+        totalAmount() {
+          return this.cartList
+            .filter(i => i.selected === 1)
+            .reduce((sum, i) => sum + (i.subtotal || 0), 0);
+        },
+      },
+      created() {
+        if (!Utils.getToken()) {
+          this.guestMode = true;
+          return;
+        }
+        this.loadCart();
+      },
+      methods: {
+        formatPrice(val) {
+          if (val == null) return '0.00';
+          return Number(val).toFixed(2);
+        },
+        onImgError(e) {
+          e.target.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 90 90"><rect fill="#f0f0f0" width="90" height="90"/><text x="45" y="48" font-size="12" fill="#999" text-anchor="middle">暂无图片</text></svg>');
+        },
+        async loadCart() {
+          this.loading = true;
+          try {
+            const res = await axios.get('/api/cart/list');
+            this.cartList = res.data?.data || [];
+          } catch (e) {
+            console.error(e);
+            if (e.response?.status === 401) {
+              sessionStorage.setItem('redirectAfterLogin', location.href);
+              location.href = 'login.html';
+            } else {
+              Utils.toast('加载失败');
+            }
+          } finally { this.loading = false; }
+        },
+        async toggleSelect(item) {
+          const newSelected = item.selected === 1 ? 0 : 1;
+          try {
+            await axios.put(`/api/cart/selected/${item.id}?selected=${newSelected}`);
+            item.selected = newSelected;
+          } catch (e) {
+            Utils.toast('操作失败');
+          }
+        },
+        async toggleAll() {
+          const newSelected = this.allSelected ? 0 : 1;
+          try {
+            await axios.put(`/api/cart/selected/all?selected=${newSelected}`);
+            this.cartList.forEach(i => i.selected = newSelected);
+          } catch (e) {
+            Utils.toast('操作失败');
+          }
+        },
+        async changeQty(item, delta) {
+          const newQty = item.quantity + delta;
+          if (newQty < 1) return;
+          try {
+            await axios.put(`/api/cart/quantity/${item.id}?quantity=${newQty}`);
+            item.quantity = newQty;
+            // 更新小计
+            if (item.productPrice != null) {
+              item.subtotal = Number(item.productPrice) * newQty;
+            }
+          } catch (e) {
+            Utils.toast('修改数量失败');
+          }
+        },
+        async removeItem(item) {
+          if (!confirm('确定删除该商品吗？')) return;
+          try {
+            await axios.delete(`/api/cart/${item.id}`);
+            this.cartList = this.cartList.filter(i => i.id !== item.id);
+            Utils.toast('已删除');
+          } catch (e) {
+            Utils.toast('删除失败');
+          }
+        },
+        async clearCart() {
+          if (!confirm('确定清空购物车吗？')) return;
+          try {
+            await axios.delete('/api/cart/clear');
+            this.cartList = [];
+            Utils.toast('已清空');
+          } catch (e) {
+            Utils.toast('操作失败');
+          }
+        },
+        checkout() {
+          Utils.toast('结算功能开发中…');
+        },
+        goShopList() {
+          location.href = 'shop-list.html';
+        },
+        goLogin() {
+          sessionStorage.setItem('redirectAfterLogin', location.href);
+          location.href = 'login.html';
+        },
+      },
+    });
+  </script>
+</body>
+</html>

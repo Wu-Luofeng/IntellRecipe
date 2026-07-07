@@ -127,13 +127,21 @@
   <script src="js/request.js"></script>
   <script src="js/utils.js"></script>
   <script>
-    Utils.requireLogin();
+    // 未登录（含游客模式）直接跳登录页，跳过登录会退回上一页
+    if (!Utils.getToken()) {
+      sessionStorage.setItem('redirectAfterLogin', location.href);
+      location.href = 'login.html';
+    }
 
     let currentIconUrl = '';
 
     (async () => {
       const info = await Utils.fetchUserInfo(true);
-      if (!info) return;
+      if (!info) {
+        Utils.toast('获取用户信息失败，请重新登录');
+        setTimeout(() => location.href = 'login.html', 1000);
+        return;
+      }
       currentIconUrl = info.icon || '';
       document.getElementById('avatarImg').src   = Utils.avatar(info.icon);
       document.getElementById('nickname').value  = info.nickname || '';

@@ -26,7 +26,7 @@ spring:
         - id: item-service
           uri: lb://item-service
           predicates:
-            - Path=/items/**, /search/**, /shop/**, /merchant/**, /product/**, /ingredient/**, /shop-type/**
+            - Path=/items/**, /search/**, /shop/**, /merchant/**, /product/**, /ingredient/**, /shop-type/**, /cart/**
         - id: voucher-service
           uri: lb://voucher-service
           predicates:

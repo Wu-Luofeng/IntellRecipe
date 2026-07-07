@@ -181,7 +181,22 @@
       sessionStorage.setItem('guestMode', 'true');
       const redir = sessionStorage.getItem('redirectAfterLogin');
       sessionStorage.removeItem('redirectAfterLogin');
-      window.location.replace(redir || 'index.html');
+      if (redir) {
+        // 需要登录才能用的页面，跳过登录后应退回上一页而非进入死循环
+        const needsLoginPages = ['my-vouchers.html', 'profile.html', 'edit-profile.html', 'diet-log.html'];
+        const targetPage = redir.split('?')[0].split('/').pop();
+        if (needsLoginPages.includes(targetPage)) {
+          if (window.history.length > 1) {
+            history.back();
+          } else {
+            window.location.replace('index.html');
+          }
+          return;
+        }
+        window.location.replace(redir);
+      } else {
+        window.location.replace('index.html');
+      }
     }
 
     // Enter 键触发登录
