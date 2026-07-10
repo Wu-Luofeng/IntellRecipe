@@ -23,6 +23,9 @@ public class RedisConstants {
     // For item service
     public static final String INGREDIENT_FIRSTPAGE_KEY = "cache:ingredient:firstpage";
     public static final String LOCK_INGREDIENT_KEY = "lock:ingredient:firstpage";
+
+    /** 今日推荐食材缓存 key（定时任务预热，24h TTL） */
+    public static final String INGREDIENT_RECOMMEND_KEY = "cache:ingredient:recommend";
     
     public static final String MERCHANT_FIRSTPAGE_KEY = "cache:merchant:firstpage";
     public static final String LOCK_KEY = "lock:merchant:firstpage";

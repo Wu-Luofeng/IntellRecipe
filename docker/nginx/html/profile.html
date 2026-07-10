@@ -78,7 +78,7 @@
       <div class="stat-num" id="orderCount">0</div>
       <div class="stat-lbl">我的订单</div>
     </div>
-    <div class="stat-cell" onclick="goIfLogin('my-vouchers.html')">
+    <div class="stat-cell" onclick="location.href='my-vouchers.html'">
       <div class="stat-num">0</div>
       <div class="stat-lbl">优惠券</div>
     </div>
@@ -108,7 +108,7 @@
       <span class="item-label">我的订单</span>
       <span class="item-arrow">›</span>
     </div>
-    <div class="list-item" onclick="goIfLogin('my-vouchers.html')">
+    <div class="list-item" onclick="location.href='my-vouchers.html'">
       <div class="item-icon" style="background:var(--accent-light);color:var(--accent)">
         <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v4c1.1 0 2 .9 2 2s-.9 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2z"/></svg>
       </div>
@@ -179,6 +179,10 @@
     <div class="nav-item" onclick="location.href='shop-list.html'">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
       <span>商家</span>
+    </div>
+    <div class="nav-item" onclick="location.href='cart.html'">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.9 18 9 18h12v-2H9.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.47 5H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+      <span>购物车</span>
     </div>
     <div class="nav-item active" onclick="location.href='profile.html'">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>

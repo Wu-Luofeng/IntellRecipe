@@ -7,7 +7,7 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/theme.css">
   <style>
-    .cart-list { padding: 12px 16px 120px; }
+    .cart-list { padding: 12px 16px 140px; }
     .cart-item {
       display: flex; align-items: stretch; background: var(--bg-card);
       border-radius: var(--radius-md); overflow: hidden;
@@ -58,7 +58,7 @@
     }
     .cart-item-wrap { position: relative; }
     .cart-footer {
-      position: fixed; bottom: var(--tabbar-h, 0); left: 0; right: 0;
+      position: fixed; bottom: var(--nav-h); left: 0; right: 0;
       background: var(--bg-card); box-shadow: 0 -2px 8px rgba(0,0,0,.06);
       display: flex; align-items: center; padding: 10px 16px; gap: 12px; z-index: 100;
     }
@@ -141,6 +141,30 @@
         结算{{ selectedCount > 0 ? '(' + selectedCount + ')' : '' }}
       </button>
     </div>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav">
+      <div class="nav-item" onclick="location.href='index.html'">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>首页</span>
+      </div>
+      <div class="nav-item" onclick="location.href='ingredient-list.html'">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20C19 20 22 3 22 3c-1 2-8 2-8 2H14z"/></svg>
+        <span>食材</span>
+      </div>
+      <div class="nav-item" onclick="location.href='shop-list.html'">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <span>商家</span>
+      </div>
+      <div class="nav-item active" onclick="location.href='cart.html'">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.9 18 9 18h12v-2H9.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.47 5H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        <span>购物车</span>
+      </div>
+      <div class="nav-item" onclick="location.href='profile.html'">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <span>我的</span>
+      </div>
+    </nav>
   </div>
 
   <script src="js/vue.min.js"></script>

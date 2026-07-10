@@ -4,6 +4,7 @@ import com.springboot.intellrecipe.common.dto.Result;
 import com.springboot.intellrecipe.common.dto.ScrollResult;
 import com.springboot.intellrecipe.item.service.IngredientService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,5 +39,25 @@ public class IngredientController {
     public Result syncEs() {
         ingredientService.syncEs();
         return Result.ok();
+    }
+
+    /**
+     * 获取今日推荐食材（Redis 缓存，定时任务预热）
+     */
+    @GetMapping("/recommend")
+    public Result getRecommend() {
+        return Result.ok(ingredientService.getRecommend());
+    }
+
+    /**
+     * 根据 id 查询食材详情
+     */
+    @GetMapping("/{id}")
+    public Result getById(@PathVariable Long id) {
+        if (id == null || id <= 0) {
+            return Result.fail("参数错误");
+        }
+        Object dto = ingredientService.getById(id);
+        return dto == null ? Result.fail("食材不存在") : Result.ok(dto);
     }
 }

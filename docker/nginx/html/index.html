@@ -142,29 +142,11 @@
         </div>
         <span class="grid-label">领券中心</span>
       </div>
-      <div class="grid-item" onclick="Utils.toast('健康报告开发中')">
-        <div class="grid-icon" style="background:#EC407A">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-        </div>
-        <span class="grid-label">健康报告</span>
-      </div>
       <div class="grid-item" onclick="location.href='diet-log.html'">
         <div class="grid-icon" style="background:#26A69A">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.05zM1 21.99V21h15.03v.99c0 .55-.45 1-1.01 1H2.01c-.56 0-1.01-.45-1.01-1zm15.03-7c0-2.47-1.96-5.99-7.51-5.99C2.96 8.99 1 12.51 1 15h15.03z"/></svg>
         </div>
         <span class="grid-label">今日食谱</span>
-      </div>
-      <div class="grid-item" onclick="Utils.toast('食谱推荐开发中')">
-        <div class="grid-icon" style="background:#FFA726">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
-        </div>
-        <span class="grid-label">智能食谱</span>
-      </div>
-      <div class="grid-item" onclick="location.href='cart.html'">
-        <div class="grid-icon" style="background:#AB47BC">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.9 18 9 18h12v-2H9.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.47 5H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-        </div>
-        <span class="grid-label">购物车</span>
       </div>
       <div class="grid-item" onclick="location.href='profile.html'">
         <div class="grid-icon" style="background:#78909C">
@@ -180,26 +162,8 @@
     <div class="section-title">今日推荐食材</div>
   </div>
   <div class="hscroll" id="ingList">
-    <div class="ing-card" onclick="location.href='ingredient-list.html'">
-      <div style="height:80px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:32px">🥦</div>
-      <div class="ing-card-body"><div class="ing-name">西兰花</div><div class="ing-kcal">34千卡/100g</div></div>
-    </div>
-    <div class="ing-card" onclick="location.href='ingredient-list.html'">
-      <div style="height:80px;background:#FFF3E0;display:flex;align-items:center;justify-content:center;font-size:32px">🍎</div>
-      <div class="ing-card-body"><div class="ing-name">苹果</div><div class="ing-kcal">52千卡/100g</div></div>
-    </div>
-    <div class="ing-card" onclick="location.href='ingredient-list.html'">
-      <div style="height:80px;background:#F3E5F5;display:flex;align-items:center;justify-content:center;font-size:32px">🥕</div>
-      <div class="ing-card-body"><div class="ing-name">胡萝卜</div><div class="ing-kcal">41千卡/100g</div></div>
-    </div>
-    <div class="ing-card" onclick="location.href='ingredient-list.html'">
-      <div style="height:80px;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:32px">🐟</div>
-      <div class="ing-card-body"><div class="ing-name">三文鱼</div><div class="ing-kcal">142千卡/100g</div></div>
-    </div>
-    <div class="ing-card" onclick="location.href='ingredient-list.html'">
-      <div style="height:80px;background:#FCE4EC;display:flex;align-items:center;justify-content:center;font-size:32px">🥚</div>
-      <div class="ing-card-body"><div class="ing-name">鸡蛋</div><div class="ing-kcal">144千卡/100g</div></div>
-    </div>
+    <!-- 动态加载，加载前显示骨架占位 -->
+    <div class="ing-card"><div style="height:80px;background:var(--bg)"></div><div class="ing-card-body"><div class="ing-name">加载中…</div></div></div>
   </div>
 
   <div style="height: 16px;"></div>
@@ -217,6 +181,10 @@
     <div class="nav-item" onclick="location.href='shop-list.html'" style="transition:transform .12s ease" ontouchstart="this.style.transform='scale(.88)'" ontouchend="this.style.transform=''">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
       <span>商家</span>
+    </div>
+    <div class="nav-item" onclick="location.href='cart.html'" style="transition:transform .12s ease" ontouchstart="this.style.transform='scale(.88)'" ontouchend="this.style.transform=''">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.9 18 9 18h12v-2H9.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.47 5H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+      <span>购物车</span>
     </div>
     <div class="nav-item" onclick="location.href='profile.html'" style="transition:transform .12s ease" ontouchstart="this.style.transform='scale(.88)'" ontouchend="this.style.transform=''">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -276,6 +244,33 @@
         document.getElementById('ncMeals').textContent = '-';
         document.getElementById('ncRemain').textContent = '- -';
         document.getElementById('ncGoal').textContent = GOAL;
+      }
+    })();
+
+    // 加载今日推荐食材
+    (async () => {
+      const box = document.getElementById('ingList');
+      try {
+        const res = await axios.get('/api/ingredient/recommend');
+        const list = res.data?.data || [];
+        if (!list.length) {
+          box.innerHTML = '<div class="ing-card"><div style="height:80px;background:var(--bg)"></div><div class="ing-card-body"><div class="ing-name">暂无推荐</div></div></div>';
+          return;
+        }
+        box.innerHTML = list.map(it => {
+          const img = it.image
+            ? `<img src="${it.image}" alt="${it.name || ''}" onerror="this.style.display='none'">`
+            : `<div style="height:80px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:32px">🥗</div>`;
+          return `<div class="ing-card" onclick="location.href='ingredient-detail.html?id=${it.id}'">
+            ${img}
+            <div class="ing-card-body">
+              <div class="ing-name">${it.name || '未知食材'}</div>
+              <div class="ing-kcal">${it.nutritionValue || ''}</div>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        box.innerHTML = '<div class="ing-card"><div style="height:80px;background:var(--bg)"></div><div class="ing-card-body"><div class="ing-name">加载失败</div></div></div>';
       }
     })();
 

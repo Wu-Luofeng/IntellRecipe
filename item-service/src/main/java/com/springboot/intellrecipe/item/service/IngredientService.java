@@ -2,6 +2,7 @@ package com.springboot.intellrecipe.item.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.springboot.intellrecipe.common.dto.ScrollResult;
+import com.springboot.intellrecipe.common.dto.IngredientDTO;
 import com.springboot.intellrecipe.common.entity.Ingredient;
 import com.springboot.intellrecipe.item.es.document.IngredientDoc;
 import java.util.List;
@@ -28,4 +29,22 @@ public interface IngredientService extends IService<Ingredient> {
      * 同步数据库数据到ES
      */
     void syncEs();
+
+    /**
+     * 获取今日推荐食材（优先读 Redis 缓存，未命中则实时随机查并回填）
+     *
+     * @return 推荐食材 DTO 列表
+     */
+    List<IngredientDTO> getRecommend();
+
+    /**
+     * 刷新今日推荐食材缓存（定时任务 / 启动预热调用）。
+     * 随机选取若干食材写入 Redis，24h TTL。
+     */
+    void refreshRecommend();
+
+    /**
+     * 根据 id 查询食材详情
+     */
+    IngredientDTO getById(Long id);
 }

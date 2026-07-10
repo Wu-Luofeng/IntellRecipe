@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>食材详情 - IntellRecipe</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/theme.css">
+  <style>
+    /* 顶栏透明渐变 */
+    .floating-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: var(--header-h); display: flex; align-items: center;
+      padding: 0 16px; transition: background var(--transition);
+    }
+    .floating-header.scrolled { background: var(--bg-card); border-bottom: 1px solid var(--border); }
+    .floating-header .back-btn { background: rgba(255,255,255,.85); border-radius: 50%; }
+    .floating-header .page-title { color: transparent; transition: color var(--transition); }
+    .floating-header.scrolled .page-title { color: var(--text-main); }
+
+    /* 大图 */
+    .hero-img-wrap { position: relative; }
+    .hero-img {
+      width: 100%; aspect-ratio: 4/3; object-fit: cover; background: var(--bg);
+      display: flex; align-items: center; justify-content: center; font-size: 80px;
+    }
+    .hero-img img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* 信息卡 */
+    .info-card { background: var(--bg-card); padding: 16px; margin-bottom: 8px; }
+    .ing-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .ing-tags-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+    /* 营养信息 */
+    .nutrition-card { background: var(--bg-card); padding: 16px; margin-bottom: 8px; }
+    .section-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+    .nut-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .nut-cell { text-align: center; background: var(--bg); border-radius: var(--radius-sm); padding: 16px 4px; }
+    .nut-val  { font-size: 18px; font-weight: 700; color: var(--primary); }
+    .nut-lbl  { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+
+    /* 描述 */
+    .desc-card { background: var(--bg-card); padding: 16px; margin-bottom: 8px; }
+    .desc-text { font-size: 14px; color: var(--text-sub); line-height: 1.8; }
+
+    /* 底部操作栏 */
+    .buy-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--bg-card); border-top: 1px solid var(--border);
+      padding: 10px 16px; display: flex; align-items: center; gap: 12px; z-index: 50;
+    }
+    .action-btn {
+      flex: 1; height: 48px; border: none;
+      border-radius: var(--radius-btn); font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: opacity var(--transition);
+    }
+    .action-btn:active { opacity: .8; }
+    .action-btn.primary { background: var(--primary); color: #fff; }
+    .action-btn.secondary { background: var(--bg); color: var(--text-main); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 悬浮顶栏 -->
+    <div :class="['floating-header', scrolled?'scrolled':'']">
+      <div class="back-btn" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;margin-right:8px" onclick="history.back()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </div>
+      <span class="page-title" style="flex:1;font-size:16px;font-weight:600">{{ ing.name }}</span>
+    </div>
+
+    <div v-if="ing.id">
+      <!-- 大图 -->
+      <div class="hero-img-wrap">
+        <div class="hero-img">
+          <img v-if="ing.image" :src="ing.image" :alt="ing.name" @error="$event.target.style.display='none'">
+          <span v-else>🥗</span>
+        </div>
+      </div>
+
+      <!-- 名称/类型 -->
+      <div class="info-card">
+        <div class="ing-title">{{ ing.name }}</div>
+        <div class="ing-tags-row">
+          <span v-if="ing.type" class="tag tag-primary">{{ ing.type }}</span>
+          <span class="tag tag-gray">健康食材</span>
+        </div>
+      </div>
+
+      <!-- 营养信息 -->
+      <div class="nutrition-card">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="color:var(--primary)"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+          营养信息
+        </div>
+        <div class="nut-grid">
+          <div class="nut-cell">
+            <div class="nut-val">{{ ing.nutritionValue || '—' }}</div>
+            <div class="nut-lbl">单位热量</div>
+          </div>
+          <div class="nut-cell">
+            <div class="nut-val">{{ ing.type || '—' }}</div>
+            <div class="nut-lbl">食材分类</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 描述 -->
+      <div class="desc-card" v-if="ing.description">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="color:var(--primary)"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+          食材介绍
+        </div>
+        <div class="desc-text">{{ ing.description }}</div>
+      </div>
+
+      <div style="height: 90px;"></div>
+    </div>
+
+    <!-- 加载/错误 -->
+    <div v-if="!ing.id && !error" class="empty-state" style="padding-top:140px">
+      <span>加载中…</span>
+    </div>
+    <div v-if="error" class="empty-state" style="padding-top:140px;color:#EF4444">{{ error }}</div>
+
+    <!-- 底部操作栏 -->
+    <div class="buy-bar" v-if="ing.id">
+      <button class="action-btn secondary" onclick="location.href='ingredient-list.html'">查看更多</button>
+      <button class="action-btn primary" @click="addToDiet">记入今日食谱</button>
+    </div>
+  </div>
+
+  <script src="js/vue.min.js"></script>
+  <script src="js/axios.min.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      data: { ing: {}, error: null, scrolled: false },
+      async created() {
+        window.addEventListener('scroll', () => { this.scrolled = window.scrollY > 180; });
+        const id = Utils.getParam('id');
+        if (!id) { this.error = '参数错误'; return; }
+        try {
+          const res = await axios.get('/api/ingredient/' + id);
+          this.ing = res.data?.data || {};
+          if (!this.ing.id) this.error = '食材不存在';
+        } catch (e) {
+          console.error(e);
+          this.error = '加载失败，请稍后重试';
+        }
+      },
+      methods: {
+        async addToDiet() {
+          if (!Utils.getToken()) {
+            sessionStorage.setItem('redirectAfterLogin', location.href);
+            location.href = 'login.html';
+            return;
+          }
+          // 跳转到饮食记录页，并通过 URL 参数预选当前食材
+          location.href = 'diet-log.html?ingredientId=' + this.ing.id + '&ingredientName=' + encodeURIComponent(this.ing.name || '');
+        },
+      },
+    });
+  </script>
+</body>
+</html>
