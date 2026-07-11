@@ -10,7 +10,8 @@ import com.springboot.intellrecipe.common.utils.RedisConstants;
 import com.springboot.intellrecipe.item.mapper.IngredientMapper;
 import com.springboot.intellrecipe.item.mapper.MerchantMapper;
 import com.springboot.intellrecipe.item.mapper.ProductMapper;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,10 +23,11 @@ import java.util.Set;
  * 管理端控制器 —— 食材/商家/商品的增删改查
  * 不做登录鉴权，仅供内部管理使用
  */
-@Slf4j
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
     @Resource
     private IngredientMapper ingredientMapper;
@@ -50,9 +52,9 @@ public class AdminController {
                 stringRedisTemplate.delete(keys);
             }
             stringRedisTemplate.delete(RedisConstants.INGREDIENT_RECOMMEND_KEY);
-            log.info("[Admin] 食材缓存已清理");
+            logger.info("[Admin] 食材缓存已清理");
         } catch (Exception e) {
-            log.warn("[Admin] 清理食材缓存失败", e);
+            logger.warn("[Admin] 清理食材缓存失败", e);
         }
     }
 
@@ -66,9 +68,9 @@ public class AdminController {
             if (keys != null && !keys.isEmpty()) {
                 stringRedisTemplate.delete(keys);
             }
-            log.info("[Admin] 商家缓存已清理");
+            logger.info("[Admin] 商家缓存已清理");
         } catch (Exception e) {
-            log.warn("[Admin] 清理商家缓存失败", e);
+            logger.warn("[Admin] 清理商家缓存失败", e);
         }
     }
 
@@ -77,7 +79,7 @@ public class AdminController {
      */
     private void clearProductCache() {
         // 商品目前无 Redis 缓存，预留扩展位
-        log.info("[Admin] 商品缓存清理（无缓存，跳过）");
+        logger.info("[Admin] 商品缓存清理（无缓存，跳过）");
     }
 
     // ==================== 食材管理 ====================

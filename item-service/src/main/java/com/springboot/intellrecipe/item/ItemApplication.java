@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.mybatis.spring.annotation.MapperScan;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.ApplicationRunner;
@@ -14,7 +16,6 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.springboot.intellrecipe.item.service.IngredientService;
-import lombok.extern.slf4j.Slf4j;
 
 @MapperScan("com.springboot.intellrecipe.item.mapper")
 @SpringBootApplication
@@ -22,8 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 @ComponentScan(basePackages = {"com.springboot.intellrecipe.item", "com.springboot.intellrecipe.common"}) // 扫描common包
 @EnableAspectJAutoProxy(exposeProxy = true)
 @EnableScheduling
-@Slf4j
 public class ItemApplication {
+
+    private static final Logger logger = LoggerFactory.getLogger(ItemApplication.class);
 
     /**
      * 服务启动后自动同步食材数据到 ES，避免重启后索引为空导致搜索无结果。
@@ -33,11 +35,11 @@ public class ItemApplication {
     public ApplicationRunner autoSyncEs(IngredientService ingredientService) {
         return args -> {
             try {
-                log.info("[AutoSync] 开始同步食材数据到 Elasticsearch...");
+                logger.info("[AutoSync] 开始同步食材数据到 Elasticsearch...");
                 ingredientService.syncEs();
-                log.info("[AutoSync] 食材数据同步 ES 完成");
+                logger.info("[AutoSync] 食材数据同步 ES 完成");
             } catch (Exception e) {
-                log.warn("[AutoSync] 食材数据同步 ES 失败，搜索将走 MySQL 兜底", e);
+                logger.warn("[AutoSync] 食材数据同步 ES 失败，搜索将走 MySQL 兜底", e);
             }
         };
     }

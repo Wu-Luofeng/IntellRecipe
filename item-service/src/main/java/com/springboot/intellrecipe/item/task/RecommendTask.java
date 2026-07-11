@@ -1,7 +1,8 @@
 package com.springboot.intellrecipe.item.task;
 
 import com.springboot.intellrecipe.item.service.IngredientService;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -15,9 +16,10 @@ import org.springframework.stereotype.Component;
  * 2. 每天凌晨 3 点刷新推荐列表，24h TTL。
  * </p>
  */
-@Slf4j
 @Component
 public class RecommendTask implements ApplicationRunner {
+
+    private static final Logger logger = LoggerFactory.getLogger(RecommendTask.class);
 
     @Autowired
     private IngredientService ingredientService;
@@ -33,7 +35,7 @@ public class RecommendTask implements ApplicationRunner {
             Thread.currentThread().interrupt();
             return;
         }
-        log.info("[RecommendTask] 服务启动，开始预热今日推荐食材...");
+        logger.info("[RecommendTask] 服务启动，开始预热今日推荐食材...");
         ingredientService.refreshRecommend();
     }
 
@@ -42,7 +44,7 @@ public class RecommendTask implements ApplicationRunner {
      */
     @Scheduled(cron = "0 0 3 * * ?")
     public void refreshDailyRecommend() {
-        log.info("[RecommendTask] 定时任务触发，刷新今日推荐食材...");
+        logger.info("[RecommendTask] 定时任务触发，刷新今日推荐食材...");
         ingredientService.refreshRecommend();
     }
 }

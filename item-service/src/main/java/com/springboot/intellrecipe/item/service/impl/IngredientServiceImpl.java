@@ -2,7 +2,6 @@ package com.springboot.intellrecipe.item.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -13,7 +12,8 @@ import com.springboot.intellrecipe.item.mapper.IngredientMapper;
 import com.springboot.intellrecipe.item.service.IngredientService;
 import com.springboot.intellrecipe.common.utils.CacheClient;
 import com.springboot.intellrecipe.common.utils.RedisConstants;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 
 import com.springboot.intellrecipe.item.es.document.IngredientDoc;
 import com.springboot.intellrecipe.item.es.repository.IngredientRepository;
-import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.Operator;
 import org.springframework.data.domain.PageRequest;
@@ -35,9 +34,10 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 
-@Slf4j
 @Service
 public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredient> implements IngredientService {
+
+    private static final Logger logger = LoggerFactory.getLogger(IngredientServiceImpl.class);
 
     @Resource
     private CacheClient cacheClient;
@@ -73,7 +73,7 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
                     30L,
                     TimeUnit.MINUTES);
         } catch (Exception e) {
-            log.error("查询食材列表失败", e);
+            logger.error("查询食材列表失败", e);
             throw new RuntimeException(e);
         }
     }
@@ -102,7 +102,7 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
                     .map(hit -> hit.getContent())
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("ES搜索异常或超时，触发MySQL兜底查询, keyword: {}", key, e);
+            logger.error("ES搜索异常或超时，触发MySQL兜底查询, keyword: {}", key, e);
             
             return searchFromDb(key);
         }
@@ -139,7 +139,7 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
         // 1. 查询所有数据
         List<Ingredient> list = list();
         if (list == null || list.isEmpty()) {
-            log.warn("数据库中没有食材数据，无需同步");
+            logger.warn("数据库中没有食材数据，无需同步");
             return;
         }
 
@@ -149,14 +149,14 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
                 .collect(Collectors.toList());
 
         if (ingredientRepository == null) {
-            log.warn("Elasticsearch 已禁用或未装配，跳过同步到 ES");
+            logger.warn("Elasticsearch 已禁用或未装配，跳过同步到 ES");
             return;
         }
         try {
             ingredientRepository.saveAll(docs);
-            log.info("成功同步 {} 条食材数据到 ES", docs.size());
+            logger.info("成功同步 {} 条食材数据到 ES", docs.size());
         } catch (Exception e) {
-            log.warn("ES 不可用或未启动，跳过同步。keyword 搜索仍会走 MySQL 兜底。", e);
+            logger.warn("ES 不可用或未启动，跳过同步。keyword 搜索仍会走 MySQL 兜底。", e);
         }
     }
 
@@ -197,7 +197,7 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
                 return JSONUtil.toList(json, IngredientDTO.class);
             }
         } catch (Exception e) {
-            log.warn("读取推荐食材缓存失败，走 DB 兜底", e);
+            logger.warn("读取推荐食材缓存失败，走 DB 兜底", e);
         }
         // 缓存未命中，实时随机查一次并回填
         List<IngredientDTO> fresh = randomPickFromDb(RECOMMEND_SIZE);
@@ -210,9 +210,9 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
         try {
             List<IngredientDTO> fresh = randomPickFromDb(RECOMMEND_SIZE);
             refreshRecommendCache(fresh);
-            log.info("[RecommendTask] 刷新今日推荐食材成功，共 {} 条", fresh.size());
+            logger.info("[RecommendTask] 刷新今日推荐食材成功，共 {} 条", fresh.size());
         } catch (Exception e) {
-            log.error("[RecommendTask] 刷新今日推荐食材失败", e);
+            logger.error("[RecommendTask] 刷新今日推荐食材失败", e);
         }
     }
 
@@ -258,7 +258,7 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
             // rename 覆盖正式 key（原子操作）
             stringRedisTemplate.rename(tmpKey, key);
         } catch (Exception e) {
-            log.warn("写入推荐食材缓存失败", e);
+            logger.warn("写入推荐食材缓存失败", e);
             try {
                 stringRedisTemplate.delete(tmpKey);
             } catch (Exception ignored) {}
