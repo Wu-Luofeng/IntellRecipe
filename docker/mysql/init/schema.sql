@@ -45,6 +45,7 @@ CREATE TABLE `ingredient` (
   `description` varchar(500) DEFAULT NULL COMMENT '食材描述',
   `nutrition_value` varchar(100) DEFAULT NULL COMMENT '单位热量文案(如:50千卡/100g)',
   `calories_per100g` decimal(8,1) DEFAULT NULL COMMENT '每100g热量(千卡)，数值型，用于计算',
+  `seq_no` int(11) DEFAULT NULL COMMENT '序列号（从1递增，删除后重排）',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint DEFAULT 0 COMMENT '逻辑删除 0:未删除 1:已删除',

@@ -52,6 +52,11 @@ public class Ingredient implements Serializable {
      */
     private BigDecimal caloriesPer100g;
 
+    /**
+     * 序列号（从1开始连续递增，删除后自动重排，不跳号）
+     */
+    private Integer seqNo;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;

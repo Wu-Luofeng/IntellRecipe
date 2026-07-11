@@ -143,10 +143,11 @@
       <div class="table-wrap">
         <table class="data-table" v-if="tab==='ingredient'">
           <thead>
-            <tr><th>ID</th><th>名称</th><th>热量/100g</th><th>热量文案</th><th>描述</th><th>操作</th></tr>
+            <tr><th>序列号</th><th>ID</th><th>名称</th><th>热量/100g</th><th>热量文案</th><th>描述</th><th>操作</th></tr>
           </thead>
           <tbody>
             <tr v-for="row in list" :key="row.id">
+              <td>{{ row.seqNo || '—' }}</td>
               <td>{{ row.id }}</td>
               <td>{{ row.name }}</td>
               <td>{{ row.caloriesPer100g || '—' }}</td>

@@ -103,6 +103,9 @@ public class AdminController {
         if (exist != null) {
             return Result.fail("食材名称已存在");
         }
+        // 自动分配序列号 = 当前最大序列号 + 1
+        Integer maxSeqNo = ingredientMapper.getMaxSeqNo();
+        ingredient.setSeqNo(maxSeqNo + 1);
         ingredientMapper.insert(ingredient);
         clearIngredientCache();
         return Result.ok(ingredient);
@@ -122,17 +125,24 @@ public class AdminController {
     }
 
     /**
-     * 删除食材（物理删除）
+     * 删除食材（物理删除 + 序列号重排，保证不跳号）
      */
     @DeleteMapping("/ingredient/{id}")
     public Result deleteIngredient(@PathVariable Long id) {
+        // 1. 先查出被删记录的 seq_no
+        Integer deletedSeqNo = ingredientMapper.getSeqNoById(id);
+        // 2. 物理删除
         ingredientMapper.physicalDeleteById(id);
+        // 3. 将 seq_no > deletedSeqNo 的记录全部减1，填补空缺
+        if (deletedSeqNo != null) {
+            ingredientMapper.shiftSeqNoAfterDelete(deletedSeqNo);
+        }
         clearIngredientCache();
         return Result.ok();
     }
 
     /**
-     * 查询全部食材（分页）
+     * 查询全部食材（分页，按序列号正序）
      */
     @GetMapping("/ingredient/list")
     public Result listIngredient(
@@ -143,7 +153,7 @@ public class AdminController {
         if (keyword != null && !keyword.trim().isEmpty()) {
             wrapper.like(Ingredient::getName, keyword);
         }
-        wrapper.orderByDesc(Ingredient::getId);
+        wrapper.orderByAsc(Ingredient::getSeqNo);
         Page<Ingredient> p = ingredientMapper.selectPage(new Page<>(page, size), wrapper);
         return Result.ok(p.getRecords(), p.getTotal());
     }
