@@ -197,7 +197,7 @@
             const cached = JSON.parse(sessionStorage.getItem('currentMerchant') || '{}');
             if (String(cached.id) === String(this.merchantId)) {
               this.merchant = cached;
-              this.merchantImg = cached.images ? cached.images.split(',')[0].trim() : '';
+              this.merchantImg = cached.image || (cached.images ? cached.images.split(',')[0].trim() : '');
             }
           } catch (_) {}
         },
@@ -209,8 +209,8 @@
         async loadVouchers() {
           this.voucherLoading = true;
           try {
-            const res = await axios.get(`/api/vouchers/list/${this.merchantId}`);
-            this.vouchers = res.data?.data || [];
+            const res = await axios.get('/api/vouchers/list/' + this.merchantId);
+            this.vouchers = res.data && res.data.data || [];
             // 从领券入口进来且没券时，自动切到商品
             if (!this.vouchers.length && Utils.getParam('tab') !== 'products') {
               // 保持优惠券 tab 显示空状态，让用户知道
@@ -227,9 +227,9 @@
             const params = { merchantId: this.merchantId, limit: 20 };
             if (this.productLastId) params.lastId = this.productLastId;
             const res = await axios.get('/api/product/list', { params });
-            const data = res.data?.data || {};
+            const data = res.data && res.data.data || {};
             const rows = data.list || [];
-            this.products.push(...rows);
+            this.products.push.apply(this.products, rows);
             if (!rows.length || data.minTime == null) this.productNoMore = true;
             else this.productLastId = data.minTime;
           } catch (e) {
@@ -238,19 +238,21 @@
         },
         onScroll() {
           if (this.tab !== 'products') return;
-          const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+          var scrollTop = document.documentElement.scrollTop;
+          var scrollHeight = document.documentElement.scrollHeight;
+          var clientHeight = document.documentElement.clientHeight;
           if (scrollHeight - scrollTop - clientHeight < 120) this.loadProducts();
         },
         async buyVoucher(v) {
           if (!Utils.requireLogin()) return;
           this.buyingId = v.id;
           try {
-            const res = await axios.post(`/api/voucher-orders/purchase/${v.id}`);
+            const res = await axios.post('/api/voucher-orders/purchase/' + v.id);
             if (res.data.success) {
               Utils.toast('领取成功！订单号：' + (res.data.data || ''));
             } else {
-              const msg = res.data.errorMsg || '领取失败';
-              if (msg.includes('登录')) {
+              var msg = res.data.errorMsg || '领取失败';
+              if (msg.indexOf('登录') >= 0) {
                 sessionStorage.setItem('redirectAfterLogin', location.href);
                 location.href = 'login.html';
               } else {
@@ -258,7 +260,7 @@
               }
             }
           } catch (err) {
-            if (err.response?.status === 401) {
+            if (err.response && err.response.status === 401) {
               sessionStorage.setItem('redirectAfterLogin', location.href);
               location.href = 'login.html';
             } else {
@@ -267,10 +269,10 @@
           } finally { this.buyingId = null; }
         },
         goVoucherDetail(id) {
-          location.href = `voucher-detail.html?id=${id}&merchantId=${this.merchantId}`;
+          location.href = 'voucher-detail.html?id=' + id + '&merchantId=' + this.merchantId;
         },
         goProduct(id) {
-          location.href = `product-detail.html?id=${id}&merchantId=${this.merchantId}`;
+          location.href = 'product-detail.html?id=' + id + '&merchantId=' + this.merchantId;
         },
       },
     });

@@ -85,7 +85,7 @@
 
     <!-- 列表 -->
     <div class="list-wrap">
-      <div v-for="item in list" :key="item.id" class="ing-item">
+      <div v-for="item in list" :key="item.id" class="ing-item" @click="goDetail(item.id)">
         <div class="ing-thumb emoji-bg">
           <img v-if="item.image" :src="item.image" :alt="item.name" @error="$event.target.style.display='none'">
           <span v-else>{{ item.emoji || '🌿' }}</span>
@@ -203,6 +203,7 @@
         },
         switchCat(id) { this.activeCat = id; this.reset(); },
         reset() { this.list = []; this.lastId = null; this.noMore = false; this.loadMore(); },
+        goDetail(id) { location.href = 'ingredient-detail.html?id=' + id; },
         onScroll() {
           const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
           if (scrollHeight - scrollTop - clientHeight < 120) this.loadMore();

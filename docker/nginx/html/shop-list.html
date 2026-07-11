@@ -116,7 +116,7 @@
     <div v-for="shop in list" :key="shop.id" class="shop-card"
          @click="goDetail(shop)">
       <div class="shop-cover">
-        <img v-if="firstImage(shop.images)" :src="firstImage(shop.images)" class="shop-cover-img" :alt="shop.name"
+        <img v-if="shop.image" :src="shop.image" class="shop-cover-img" :alt="shop.name"
              @error="$event.target.style.display='none'">
         <span v-else class="shop-cover-placeholder">🏪</span>
         <div v-if="(shop.score/10) >= 4.8" class="shop-badge">精选</div>
@@ -237,10 +237,6 @@
             Utils.toast('加载失败');
           } finally { this.loading = false; }
         },
-        firstImage(images) {
-          if (!images) return '';
-          return images.split(',')[0].trim();
-        },
         onSearch()   { clearTimeout(this.searchTimer); this.searchTimer = setTimeout(()=>this.reset(), 400); },
         switchTag(id){ this.activeTag = id; this.reset(); },
         setSort(s)   { this.sort = s; this.reset(); },
@@ -251,7 +247,7 @@
         },
         goDetail(shop) {
           sessionStorage.setItem('currentMerchant', JSON.stringify({
-            id: shop.id, name: shop.name, images: shop.images,
+            id: shop.id, name: shop.name, image: shop.image,
             score: shop.score, sold: shop.sold, avgPrice: shop.avgPrice, address: shop.address,
           }));
           const tab = this.isVoucherMode ? 'vouchers' : 'products';

@@ -1,0 +1,84 @@
+﻿[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] IntellRecipe                                                       [pom]
+[INFO] intellrecipe-common                                                [jar]
+[INFO] item-service                                                       [jar]
+[INFO] intellrecipe-gateway                                               [jar]
+[INFO] 
+[INFO] --------------------< com.springboot:IntellRecipe >---------------------
+[INFO] Building IntellRecipe 0.0.1-SNAPSHOT                               [1/4]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ IntellRecipe ---
+[INFO] 
+[INFO] -----------------< com.springboot:intellrecipe-common >-----------------
+[INFO] Building intellrecipe-common 0.0.1-SNAPSHOT                        [2/4]
+[INFO]   from intellrecipe-common\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ intellrecipe-common ---
+[INFO] Deleting E:\study\javaCode\springboot\IntellRecipe\intellrecipe-common\target
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ intellrecipe-common ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory E:\study\javaCode\springboot\IntellRecipe\intellrecipe-common\src\main\resources
+[INFO] skip non existing resourceDirectory E:\study\javaCode\springboot\IntellRecipe\intellrecipe-common\src\main\resources
+[INFO] 
+[INFO] --- compiler:3.8.1:compile (default-compile) @ intellrecipe-common ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 27 source files to E:\study\javaCode\springboot\IntellRecipe\intellrecipe-common\target\classes
+[INFO] /E:/study/javaCode/springboot/IntellRecipe/intellrecipe-common/src/main/java/com/springboot/intellrecipe/common/dto/Result.java: E:\study\javaCode\springboot\IntellRecipe\intellrecipe-common\src\main\java\com\springboot\intellrecipe\common\dto\Result.java使用了未经检查或不安全的操作。
+[INFO] /E:/study/javaCode/springboot/IntellRecipe/intellrecipe-common/src/main/java/com/springboot/intellrecipe/common/dto/Result.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --------------------< com.springboot:item-service >---------------------
+[INFO] Building item-service 0.0.1-SNAPSHOT                               [3/4]
+[INFO]   from item-service\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ item-service ---
+[INFO] Deleting E:\study\javaCode\springboot\IntellRecipe\item-service\target
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ item-service ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 0 resource
+[INFO] 
+[INFO] --- compiler:3.8.1:compile (default-compile) @ item-service ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 25 source files to E:\study\javaCode\springboot\IntellRecipe\item-service\target\classes
+[INFO] 
+[INFO] ----------------< com.springboot:intellrecipe-gateway >-----------------
+[INFO] Building intellrecipe-gateway 0.0.1-SNAPSHOT                       [4/4]
+[INFO]   from intellrecipe-gateway\pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ intellrecipe-gateway ---
+[INFO] Deleting E:\study\javaCode\springboot\IntellRecipe\intellrecipe-gateway\target
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ intellrecipe-gateway ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 1 resource
+[INFO] Copying 0 resource
+[INFO] 
+[INFO] --- compiler:3.8.1:compile (default-compile) @ intellrecipe-gateway ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 2 source files to E:\study\javaCode\springboot\IntellRecipe\intellrecipe-gateway\target\classes
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for IntellRecipe 0.0.1-SNAPSHOT:
+[INFO] 
+[INFO] IntellRecipe ....................................... SUCCESS [  0.232 s]
+[INFO] intellrecipe-common ................................ SUCCESS [  4.702 s]
+[INFO] item-service ....................................... SUCCESS [  2.901 s]
+[INFO] intellrecipe-gateway ............................... SUCCESS [  1.226 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  9.695 s
+[INFO] Finished at: 2026-07-11T15:46:10+08:00
+[INFO] ------------------------------------------------------------------------

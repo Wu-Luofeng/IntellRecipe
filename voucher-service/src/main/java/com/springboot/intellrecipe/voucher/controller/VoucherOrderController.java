@@ -29,7 +29,11 @@ public class VoucherOrderController {
      */
     @PostMapping("/purchase/{voucherId}")
     public Result purchaseVoucher(@PathVariable("voucherId") Long voucherId) {
-        Long orderId = voucherOrderService.purchaseVoucher(voucherId);
-        return Result.ok(orderId);
+        try {
+            Long orderId = voucherOrderService.purchaseVoucher(voucherId);
+            return Result.ok(orderId);
+        } catch (RuntimeException e) {
+            return Result.fail(e.getMessage());
+        }
     }
 }

@@ -80,7 +80,7 @@
 
       <!-- 名称/类型 -->
       <div class="info-card">
-        <div class="ing-title">{{ ing.name }}</div>
+        <div class="ing-title">{{ ing.name }}<span style="font-size:14px;color:var(--text-hint);font-weight:400;margin-left:8px">#{{ ing.id }}</span></div>
         <div class="ing-tags-row">
           <span v-if="ing.type" class="tag tag-primary">{{ ing.type }}</span>
           <span class="tag tag-gray">健康食材</span>

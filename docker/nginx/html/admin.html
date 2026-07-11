@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 - IntellRecipe</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/theme.css">
+  <style>
+    body { background: var(--bg); }
+    .admin-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: var(--header-h); background: var(--bg-card);
+      display: flex; align-items: center; padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-header .title { font-size: 18px; font-weight: 700; flex: 1; }
+    .admin-header .title span { color: var(--primary); }
+
+    .tab-bar {
+      position: fixed; top: var(--header-h); left: 0; right: 0; z-index: 99;
+      display: flex; background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-bar .tab {
+      flex: 1; text-align: center; padding: 12px 0;
+      font-size: 15px; font-weight: 600; color: var(--text-sub);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: all var(--transition);
+    }
+    .tab-bar .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .admin-body { padding-top: calc(var(--header-h) + 48px + 8px); padding-bottom: 20px; }
+
+    .toolbar { display: flex; gap: 8px; padding: 12px 16px; }
+    .toolbar .search-bar { flex: 1; }
+    .toolbar .add-btn {
+      height: 40px; padding: 0 16px; border: none; border-radius: 20px;
+      background: var(--primary); color: #fff; font-size: 14px; font-weight: 600;
+      cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px;
+    }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      background: var(--bg); padding: 10px 12px; text-align: left;
+      font-size: 12px; color: var(--text-sub); font-weight: 600;
+      white-space: nowrap; position: sticky; top: 0;
+    }
+    .data-table td {
+      padding: 10px 12px; border-top: 1px solid var(--border);
+      font-size: 14px; color: var(--text-main); max-width: 200px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .data-table tr:hover { background: var(--primary-light); }
+
+    .action-btn {
+      padding: 4px 10px; border: none; border-radius: 6px;
+      font-size: 12px; cursor: pointer; margin-right: 4px;
+    }
+    .action-btn.edit { background: var(--primary-light); color: var(--primary); }
+    .action-btn.del { background: var(--accent-light); color: var(--accent); }
+
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 12px; padding: 16px; }
+    .pagination button {
+      height: 36px; padding: 0 14px; border: 1px solid var(--border);
+      border-radius: 8px; background: var(--bg-card); cursor: pointer;
+      font-size: 14px; color: var(--text-main);
+    }
+    .pagination button:disabled { opacity: .4; cursor: not-allowed; }
+    .pagination .page-info { font-size: 14px; color: var(--text-sub); }
+
+    /* 弹窗 */
+    .modal-mask {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,.4); z-index: 200;
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal {
+      background: var(--bg-card); border-radius: var(--radius-lg);
+      width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto;
+      box-shadow: var(--shadow-md);
+    }
+    .modal-header {
+      padding: 16px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-header h3 { font-size: 17px; font-weight: 700; }
+    .modal-header .close { font-size: 22px; cursor: pointer; color: var(--text-hint); }
+    .modal-body { padding: 16px; }
+    .modal-footer {
+      padding: 12px 16px; border-top: 1px solid var(--border);
+      display: flex; gap: 12px; justify-content: flex-end;
+    }
+    .modal-footer button {
+      height: 40px; padding: 0 20px; border: none; border-radius: 20px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .modal-footer .btn-cancel { background: var(--bg); color: var(--text-sub); }
+    .modal-footer .btn-save { background: var(--primary); color: #fff; }
+
+    .form-row { margin-bottom: 14px; }
+    .form-row label { display: block; font-size: 13px; color: var(--text-sub); margin-bottom: 6px; }
+    .form-row label .req { color: var(--accent); }
+    .form-row input, .form-row textarea, .form-row select {
+      width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px 12px; font-size: 14px; color: var(--text-main); outline: none;
+      transition: border-color var(--transition);
+    }
+    .form-row input:focus, .form-row textarea:focus, .form-row select:focus { border-color: var(--primary); }
+    .form-row textarea { resize: vertical; min-height: 80px; }
+
+    .table-wrap { overflow-x: auto; background: var(--bg-card); margin: 0 16px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 顶栏 -->
+    <div class="admin-header">
+      <div class="title"><span>IntellRecipe</span> 管理后台</div>
+    </div>
+
+    <!-- Tab栏 -->
+    <div class="tab-bar">
+      <div :class="['tab', tab==='ingredient'?'active':'']" @click="switchTab('ingredient')">食材管理</div>
+      <div :class="['tab', tab==='merchant'?'active':'']" @click="switchTab('merchant')">商家管理</div>
+      <div :class="['tab', tab==='product'?'active':'']" @click="switchTab('product')">商品管理</div>
+    </div>
+
+    <div class="admin-body">
+      <!-- 工具栏 -->
+      <div class="toolbar">
+        <div class="search-bar">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input v-model="keyword" :placeholder="searchPlaceholder" @keyup.enter="loadData">
+        </div>
+        <button class="add-btn" @click="openAdd">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          新增
+        </button>
+      </div>
+
+      <!-- 数据表格 -->
+      <div class="table-wrap">
+        <table class="data-table" v-if="tab==='ingredient'">
+          <thead>
+            <tr><th>ID</th><th>名称</th><th>热量/100g</th><th>热量文案</th><th>描述</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in list" :key="row.id">
+              <td>{{ row.id }}</td>
+              <td>{{ row.name }}</td>
+              <td>{{ row.caloriesPer100g || '—' }}</td>
+              <td>{{ row.nutritionValue || '—' }}</td>
+              <td>{{ row.description || '—' }}</td>
+              <td>
+                <button class="action-btn edit" @click="openEdit(row)">编辑</button>
+                <button class="action-btn del" @click="del(row)">删除</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="data-table" v-if="tab==='merchant'">
+          <thead>
+            <tr><th>ID</th><th>名称</th><th>地址</th><th>电话</th><th>评分</th><th>营业时间</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in list" :key="row.id">
+              <td>{{ row.id }}</td>
+              <td>{{ row.name }}</td>
+              <td>{{ row.address || '—' }}</td>
+              <td>{{ row.phone || '—' }}</td>
+              <td>{{ row.score || '—' }}</td>
+              <td>{{ row.openHours || '—' }}</td>
+              <td>
+                <button class="action-btn edit" @click="openEdit(row)">编辑</button>
+                <button class="action-btn del" @click="del(row)">删除</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="data-table" v-if="tab==='product'">
+          <thead>
+            <tr><th>ID</th><th>商家ID</th><th>名称</th><th>价格</th><th>重量</th><th>单位</th><th>状态</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in list" :key="row.id">
+              <td>{{ row.id }}</td>
+              <td>{{ row.merchantId }}</td>
+              <td>{{ row.name }}</td>
+              <td>¥{{ row.price }}</td>
+              <td>{{ row.weight || '—' }}</td>
+              <td>{{ row.unit || '—' }}</td>
+              <td><span :class="['tag', row.status===1?'tag-primary':'tag-gray']">{{ row.status===1?'上架':'下架' }}</span></td>
+              <td>
+                <button class="action-btn edit" @click="openEdit(row)">编辑</button>
+                <button class="action-btn del" @click="del(row)">删除</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 分页 -->
+      <div class="pagination">
+        <button @click="prevPage" :disabled="page<=1">上一页</button>
+        <span class="page-info">第 {{ page }} 页 / 共 {{ totalPages }} 页 ({{ total }} 条)</span>
+        <button @click="nextPage" :disabled="page>=totalPages">下一页</button>
+      </div>
+    </div>
+
+    <!-- 新增/编辑弹窗 -->
+    <div class="modal-mask" v-if="showModal" @click.self="showModal=false">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>{{ editing ? '编辑' : '新增' }}{{ tabName }}</h3>
+          <span class="close" @click="showModal=false">&times;</span>
+        </div>
+        <div class="modal-body">
+          <!-- 食材表单 -->
+          <template v-if="tab==='ingredient'">
+            <div class="form-row">
+              <label>食材名称 <span class="req">*</span></label>
+              <input v-model="form.name" placeholder="如：鸡胸肉">
+            </div>
+            <div class="form-row">
+              <label>热量/100g (千卡) <span class="req">*</span></label>
+              <input v-model="form.caloriesPer100g" type="number" step="0.1" placeholder="如：133">
+            </div>
+            <div class="form-row">
+              <label>热量文案</label>
+              <input v-model="form.nutritionValue" placeholder="如：133千卡/100g">
+            </div>
+            <div class="form-row">
+              <label>图片URL</label>
+              <input v-model="form.image" placeholder="图片地址">
+            </div>
+            <div class="form-row">
+              <label>描述</label>
+              <textarea v-model="form.description" placeholder="食材描述（选填）"></textarea>
+            </div>
+          </template>
+
+          <!-- 商家表单 -->
+          <template v-if="tab==='merchant'">
+            <div class="form-row">
+              <label>商家名称 <span class="req">*</span></label>
+              <input v-model="form.name" placeholder="如：健康轻食店">
+            </div>
+            <div class="form-row">
+              <label>地址</label>
+              <input v-model="form.address" placeholder="商家地址">
+            </div>
+            <div class="form-row">
+              <label>电话</label>
+              <input v-model="form.phone" placeholder="联系电话">
+            </div>
+            <div class="form-row">
+              <label>图片URL</label>
+              <input v-model="form.images" placeholder="商家图片地址">
+            </div>
+            <div class="form-row">
+              <label>评分</label>
+              <input v-model="form.score" type="number" step="0.1" placeholder="如：4.5">
+            </div>
+            <div class="form-row">
+              <label>营业时间</label>
+              <input v-model="form.openHours" placeholder="如：09:00-22:00">
+            </div>
+            <div class="form-row">
+              <label>描述</label>
+              <textarea v-model="form.description" placeholder="商家描述（选填）"></textarea>
+            </div>
+          </template>
+
+          <!-- 商品表单 -->
+          <template v-if="tab==='product'">
+            <div class="form-row">
+              <label>所属商家 <span class="req">*</span></label>
+              <select v-model="form.merchantId">
+                <option :value="null" disabled>请选择商家</option>
+                <option v-for="m in merchants" :key="m.id" :value="m.id">{{ m.name }} (ID:{{ m.id }})</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>商品名称 <span class="req">*</span></label>
+              <input v-model="form.name" placeholder="如：鸡胸肉沙拉">
+            </div>
+            <div class="form-row">
+              <label>价格 (元) <span class="req">*</span></label>
+              <input v-model="form.price" type="number" step="0.01" placeholder="如：28.00">
+            </div>
+            <div class="form-row">
+              <label>图片URL</label>
+              <input v-model="form.image" placeholder="商品图片地址">
+            </div>
+            <div class="form-row">
+              <label>重量</label>
+              <input v-model="form.weight" type="number" step="0.01" placeholder="如：300">
+            </div>
+            <div class="form-row">
+              <label>单位</label>
+              <input v-model="form.unit" placeholder="如：g / ml / 份">
+            </div>
+            <div class="form-row">
+              <label>状态</label>
+              <select v-model="form.status">
+                <option :value="1">上架</option>
+                <option :value="0">下架</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>描述</label>
+              <textarea v-model="form.description" placeholder="商品描述（选填）"></textarea>
+            </div>
+          </template>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="showModal=false">取消</button>
+          <button class="btn-save" @click="save">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div :class="['toast', toastShow?'show':'']">{{ toastMsg }}</div>
+  </div>
+
+  <script src="js/vue.min.js"></script>
+  <script src="js/axios.min.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        tab: 'ingredient',
+        list: [],
+        total: 0,
+        page: 1,
+        size: 20,
+        keyword: '',
+        showModal: false,
+        editing: false,
+        form: {},
+        merchants: [],
+        toastShow: false,
+        toastMsg: '',
+      },
+      computed: {
+        totalPages() { return Math.max(1, Math.ceil(this.total / this.size)); },
+        tabName() { return { ingredient:'食材', merchant:'商家', product:'商品' }[this.tab]; },
+        searchPlaceholder() { return '搜索' + this.tabName + '名称…'; },
+      },
+      created() { this.loadData(); },
+      methods: {
+        switchTab(t) {
+          this.tab = t; this.page = 1; this.keyword = ''; this.list = [];
+          this.loadData();
+          if (t === 'product') this.loadMerchants();
+        },
+        async loadData() {
+          let url = `/api/admin/${this.tab}/list?page=${this.page}&size=${this.size}`;
+          if (this.keyword) url += `&keyword=${encodeURIComponent(this.keyword)}`;
+          try {
+            const res = await axios.get(url);
+            if (res.data.success) {
+              this.list = res.data.data || [];
+              this.total = res.data.total || 0;
+            } else {
+              this.showToast(res.data.errorMsg || '加载失败');
+            }
+          } catch(e) { this.showToast('网络错误'); }
+        },
+        async loadMerchants() {
+          try {
+            const res = await axios.get('/api/admin/merchant/all');
+            if (res.data.success) this.merchants = res.data.data || [];
+          } catch(e) {}
+        },
+        prevPage() { if (this.page > 1) { this.page--; this.loadData(); } },
+        nextPage() { if (this.page < this.totalPages) { this.page++; this.loadData(); } },
+        openAdd() {
+          this.editing = false;
+          this.form = {};
+          if (this.tab === 'product') {
+            this.form.status = 1;
+            this.loadMerchants();
+          }
+          if (this.tab === 'merchant') {
+            this.form.score = 5.0;
+          }
+          this.showModal = true;
+        },
+        openEdit(row) {
+          this.editing = true;
+          this.form = JSON.parse(JSON.stringify(row));
+          if (this.tab === 'product') this.loadMerchants();
+          this.showModal = true;
+        },
+        async save() {
+          const method = this.editing ? 'put' : 'post';
+          const url = `/api/admin/${this.tab}`;
+          try {
+            const res = await axios({ method, url, data: this.form });
+            if (res.data.success) {
+              this.showToast(this.editing ? '修改成功' : '新增成功');
+              this.showModal = false;
+              this.loadData();
+            } else {
+              this.showToast(res.data.errorMsg || '操作失败');
+            }
+          } catch(e) {
+            this.showToast(e.response?.data?.errorMsg || '网络错误');
+          }
+        },
+        async del(row) {
+          if (!confirm(`确认删除${this.tabName}「${row.name}」吗？`)) return;
+          try {
+            const res = await axios.delete(`/api/admin/${this.tab}/${row.id}`);
+            if (res.data.success) {
+              this.showToast('删除成功');
+              this.loadData();
+            } else {
+              this.showToast(res.data.errorMsg || '删除失败');
+            }
+          } catch(e) { this.showToast('网络错误'); }
+        },
+        showToast(msg) {
+          this.toastMsg = msg; this.toastShow = true;
+          setTimeout(() => { this.toastShow = false; }, 2000);
+        },
+      },
+    });
+  </script>
+</body>
+</html>

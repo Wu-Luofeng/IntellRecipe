@@ -26,7 +26,9 @@ import java.util.stream.Collectors;
 
 import com.springboot.intellrecipe.item.es.document.IngredientDoc;
 import com.springboot.intellrecipe.item.es.repository.IngredientRepository;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.Operator;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -87,9 +89,9 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
         }
 
         try {
-            // 构建查询：在 name 和 description 字段中搜索
+            // 构建查询：在 name 和 description 字段中搜索，使用 AND 操作符确保每个分词都匹配
             NativeSearchQuery query = new NativeSearchQueryBuilder()
-                    .withQuery(QueryBuilders.multiMatchQuery(key, "name", "description"))
+                    .withQuery(QueryBuilders.multiMatchQuery(key, "name", "description").operator(Operator.AND))
                     .withPageable(PageRequest.of(0, 20)) // 默认返回前20条
                     .build();
 
@@ -107,11 +109,20 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
     }
 
     private List<IngredientDoc> searchFromDb(String key) {
+        // 将关键词拆成单字，每个字都要求在 name 或 description 中出现
+        // 这样搜索"生米"时，"大米(生)"中同时包含"生"和"米"就能匹配到
+        char[] chars = key.toCharArray();
         LambdaQueryWrapper<Ingredient> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.like(Ingredient::getName, key)
-                .or()
-                .like(Ingredient::getDescription, key)
-                .last("LIMIT 20");
+        // 使用嵌套 OR：name 包含所有字 OR description 包含所有字
+        queryWrapper.and(w -> {
+            for (char c : chars) {
+                w.like(Ingredient::getName, String.valueOf(c));
+            }
+        }).or(w -> {
+            for (char c : chars) {
+                w.like(Ingredient::getDescription, String.valueOf(c));
+            }
+        }).last("LIMIT 20");
 
         List<Ingredient> dbList = list(queryWrapper);
 
