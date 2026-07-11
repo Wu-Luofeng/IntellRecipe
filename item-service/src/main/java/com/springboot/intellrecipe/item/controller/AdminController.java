@@ -6,18 +6,23 @@ import com.springboot.intellrecipe.common.dto.Result;
 import com.springboot.intellrecipe.common.entity.Ingredient;
 import com.springboot.intellrecipe.common.entity.Merchant;
 import com.springboot.intellrecipe.common.entity.Product;
+import com.springboot.intellrecipe.common.utils.RedisConstants;
 import com.springboot.intellrecipe.item.mapper.IngredientMapper;
 import com.springboot.intellrecipe.item.mapper.MerchantMapper;
 import com.springboot.intellrecipe.item.mapper.ProductMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 管理端控制器 —— 食材/商家/商品的增删改查
  * 不做登录鉴权，仅供内部管理使用
  */
+@Slf4j
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
@@ -28,6 +33,52 @@ public class AdminController {
     private MerchantMapper merchantMapper;
     @Resource
     private ProductMapper productMapper;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    // ==================== 缓存清理工具方法 ====================
+
+    /**
+     * 清理食材相关缓存：
+     * - cache:ingredient:firstpage:* （首页列表缓存，逻辑过期）
+     * - cache:ingredient:recommend （今日推荐缓存）
+     */
+    private void clearIngredientCache() {
+        try {
+            Set<String> keys = stringRedisTemplate.keys(RedisConstants.INGREDIENT_FIRSTPAGE_KEY + ":*");
+            if (keys != null && !keys.isEmpty()) {
+                stringRedisTemplate.delete(keys);
+            }
+            stringRedisTemplate.delete(RedisConstants.INGREDIENT_RECOMMEND_KEY);
+            log.info("[Admin] 食材缓存已清理");
+        } catch (Exception e) {
+            log.warn("[Admin] 清理食材缓存失败", e);
+        }
+    }
+
+    /**
+     * 清理商家相关缓存：
+     * - cache:merchant:firstpage:* （首页列表缓存，逻辑过期）
+     */
+    private void clearMerchantCache() {
+        try {
+            Set<String> keys = stringRedisTemplate.keys(RedisConstants.MERCHANT_FIRSTPAGE_KEY + ":*");
+            if (keys != null && !keys.isEmpty()) {
+                stringRedisTemplate.delete(keys);
+            }
+            log.info("[Admin] 商家缓存已清理");
+        } catch (Exception e) {
+            log.warn("[Admin] 清理商家缓存失败", e);
+        }
+    }
+
+    /**
+     * 清理商品相关缓存（目前商品无独立缓存，预留扩展）
+     */
+    private void clearProductCache() {
+        // 商品目前无 Redis 缓存，预留扩展位
+        log.info("[Admin] 商品缓存清理（无缓存，跳过）");
+    }
 
     // ==================== 食材管理 ====================
 
@@ -51,6 +102,7 @@ public class AdminController {
             return Result.fail("食材名称已存在");
         }
         ingredientMapper.insert(ingredient);
+        clearIngredientCache();
         return Result.ok(ingredient);
     }
 
@@ -63,15 +115,17 @@ public class AdminController {
             return Result.fail("ID不能为空");
         }
         ingredientMapper.updateById(ingredient);
+        clearIngredientCache();
         return Result.ok();
     }
 
     /**
-     * 删除食材（逻辑删除）
+     * 删除食材（物理删除）
      */
     @DeleteMapping("/ingredient/{id}")
     public Result deleteIngredient(@PathVariable Long id) {
-        ingredientMapper.deleteById(id);
+        ingredientMapper.physicalDeleteById(id);
+        clearIngredientCache();
         return Result.ok();
     }
 
@@ -108,6 +162,7 @@ public class AdminController {
             merchant.setScore(5.0);
         }
         merchantMapper.insert(merchant);
+        clearMerchantCache();
         return Result.ok(merchant);
     }
 
@@ -120,15 +175,17 @@ public class AdminController {
             return Result.fail("ID不能为空");
         }
         merchantMapper.updateById(merchant);
+        clearMerchantCache();
         return Result.ok();
     }
 
     /**
-     * 删除商家（逻辑删除）
+     * 删除商家（物理删除）
      */
     @DeleteMapping("/merchant/{id}")
     public Result deleteMerchant(@PathVariable Long id) {
-        merchantMapper.deleteById(id);
+        merchantMapper.physicalDeleteById(id);
+        clearMerchantCache();
         return Result.ok();
     }
 
@@ -181,6 +238,7 @@ public class AdminController {
             product.setStatus(1);
         }
         productMapper.insert(product);
+        clearProductCache();
         return Result.ok(product);
     }
 
@@ -193,15 +251,17 @@ public class AdminController {
             return Result.fail("ID不能为空");
         }
         productMapper.updateById(product);
+        clearProductCache();
         return Result.ok();
     }
 
     /**
-     * 删除商品（逻辑删除）
+     * 删除商品（物理删除）
      */
     @DeleteMapping("/product/{id}")
     public Result deleteProduct(@PathVariable Long id) {
-        productMapper.deleteById(id);
+        productMapper.physicalDeleteById(id);
+        clearProductCache();
         return Result.ok();
     }
 
