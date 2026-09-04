@@ -1,6 +1,9 @@
 package com.springboot.intellrecipe.voucher.controller;
 
 import com.springboot.intellrecipe.common.dto.Result;
+import com.springboot.intellrecipe.common.dto.UserDTO;
+import com.springboot.intellrecipe.common.utils.UserHolder;
+
 import com.springboot.intellrecipe.voucher.service.VoucherOrderService;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,4 +39,17 @@ public class VoucherOrderController {
             return Result.fail(e.getMessage());
         }
     }
+    /**
+     * 查询某商家下当前用户“可用”的优惠券（结算抵现页下拉使用）
+     * @param shopId 商家ID
+     */
+    @GetMapping("/usable")
+    public Result queryUsable(@RequestParam("shopId") Long shopId) {
+        UserDTO user = UserHolder.getUser();
+        if (user == null || user.getId() == null) {
+            return Result.fail("请先登录");
+        }
+        return voucherOrderService.queryUsableByShop(user.getId(), shopId);
+    }
+
 }

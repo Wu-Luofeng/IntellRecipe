@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>我的订单 - IntellRecipe</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/theme.css">
+  <style>
+    body { background: var(--bg); padding-top: var(--header-h); }
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: var(--bg-card);
+      display: flex; align-items: center; padding: 0 16px; z-index: 100; border-bottom: 1px solid var(--border); }
+    .back { font-size: 22px; color: var(--text-main); text-decoration: none; }
+    .title { font-size: 16px; font-weight: 700; margin-left: 12px; flex: 1; }
+    .tabs { position: fixed; top: var(--header-h); left: 0; right: 0; z-index: 99; display: flex; background: var(--bg-card);
+      border-bottom: 1px solid var(--border); overflow-x: auto; }
+    .tab { flex: 1; min-width: 60px; text-align: center; padding: 10px 0; font-size: 13px; color: var(--text-sub);
+      cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+    .tab.on { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+    .list { padding: calc(var(--header-h) + 46px) 12px 24px; }
+    .card { background: var(--bg-card); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px; cursor: pointer; }
+    .card-top { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-sub); }
+    .st { font-weight: 700; }
+    .st0, .st1 { color: var(--accent); } .st2 { color: var(--primary); } .st3 { color: var(--text-hint); }
+    .st4 { color: var(--accent); } .st5 { color: #EF4444; }
+    .order-no { font-size: 12px; color: var(--text-hint); margin: 6px 0; }
+    .amount { font-size: 16px; font-weight: 700; color: var(--text-main); }
+    .amount small { font-size: 12px; color: var(--text-sub); font-weight: 400; }
+    .fail { font-size: 12px; color: #EF4444; margin-top: 4px; }
+    .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+    .act { border: 1px solid var(--border); background: var(--bg-card); padding: 6px 14px; border-radius: 16px;
+      font-size: 13px; cursor: pointer; color: var(--text-main); }
+    .act.pay { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .empty { text-align: center; color: var(--text-hint); padding: 80px 0; }
+    [v-cloak] { display: none; }
+  </style>
+</head>
+<body>
+  <div id="app" v-cloak>
+  <div class="app-header">
+    <a class="back" href="profile.html">&larr;</a><span class="title">我的订单</span>
+  </div>
+  <div class="tabs">
+    <div class="tab" :class="{on: filter===''}" @click="setFilter('')">全部</div>
+    <div class="tab" :class="{on: filter===0}" @click="setFilter(0)">待支付</div>
+    <div class="tab" :class="{on: filter===2}" @click="setFilter(2)">已完成</div>
+    <div class="tab" :class="{on: filter===3}" @click="setFilter(3)">已取消</div>
+    <div class="tab" :class="{on: filter===5}" @click="setFilter(5)">失败</div>
+  </div>
+
+  <div class="list">
+    <div class="empty" v-if="!loading && list.length===0">暂无订单</div>
+    <div class="card" v-for="o in list" :key="o.orderNo" @click="goDetail(o.orderNo)">
+      <div class="card-top">
+        <span>{{ o.merchantName || '多商家订单' }}</span>
+        <span class="st" :class="'st'+o.status">{{ statusText(o.status) }}</span>
+      </div>
+      <div class="order-no">订单号 {{ o.orderNo }}<br v-if="o.voucherTitle">优惠券：{{ o.voucherTitle }}</div>
+      <div class="amount"><small>实付 </small>￥{{ money(o.payAmount) }}
+        <small v-if="o.discountAmount > 0">（已优惠 ￥{{ money(o.discountAmount) }}）</small></div>
+      <div class="fail" v-if="o.status===5 && o.failReason">失败原因：{{ o.failReason }}</div>
+      <div class="actions" @click.stop>
+        <span class="act" v-if="o.status===0" @click="goDetail(o.orderNo)">查看</span>
+        <span class="act pay" v-if="o.status===0" @click="pay(o)">立即支付</span>
+        <span class="act" v-if="o.status===0" @click="cancel(o)">取消订单</span>
+        <span class="act" v-if="o.status!==0" @click="goDetail(o.orderNo)">查看详情</span>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <script src="js/vue.min.js"></script>
+  <script src="js/axios.min.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    const API = '/api';
+    const STATUS = { 0: '待支付', 1: '已支付', 2: '已完成', 3: '已取消', 4: '处理中', 5: '下单失败' };
+    new Vue({
+      el: '#app',
+      data() { return { filter: '', list: [], loading: true }; },
+      created() { this.load(); },
+      methods: {
+        money(v) { return (v == null || isNaN(v)) ? '0.00' : Number(v).toFixed(2); },
+        statusText(s) { return STATUS[s] != null ? STATUS[s] : ('状态' + s); },
+        setFilter(f) { this.filter = f; this.load(); },
+        goDetail(no) { location.href = 'order-detail.html?orderNo=' + no; },
+        async load() {
+          this.loading = true;
+          try {
+            const url = API + '/order/list' + (this.filter !== '' ? ('?status=' + this.filter) : '');
+            const res = await axios.get(url);
+            this.list = (res.data && res.data.data) || [];
+          } catch (e) {
+            if (e.response && e.response.status === 401) { sessionStorage.setItem('redirectAfterLogin', location.href); location.href = 'login.html'; return; }
+            this.list = [];
+          } finally { this.loading = false; }
+        },
+        async pay(o) {
+          if (!confirm('确认支付订单 ' + o.orderNo + ' 吗？')) return;
+          try {
+            const res = await axios.post(API + '/order/pay?orderNo=' + o.orderNo);
+            if (res.data && res.data.success) { Utils.toast('支付成功'); this.load(); }
+            else Utils.toast((res.data && res.data.errorMsg) || '支付失败');
+          } catch (e) { Utils.toast('支付失败'); }
+        },
+        async cancel(o) {
+          if (!confirm('确认取消订单 ' + o.orderNo + ' 吗？（已用优惠券将退回）')) return;
+          try {
+            const res = await axios.post(API + '/order/cancel?orderNo=' + o.orderNo);
+            if (res.data && res.data.success) { Utils.toast('已取消'); this.load(); }
+            else Utils.toast((res.data && res.data.errorMsg) || '取消失败');
+          } catch (e) { Utils.toast('取消失败'); }
+        },
+      },
+    });
+  </script>
+</body>
+</html>

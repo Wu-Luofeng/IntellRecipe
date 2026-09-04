@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>收货地址 - IntellRecipe</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/theme.css">
+  <style>
+    body { background: var(--bg); padding-top: var(--header-h); padding-bottom: 20px; }
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: var(--bg-card);
+      display: flex; align-items: center; padding: 0 16px; z-index: 100; border-bottom: 1px solid var(--border); }
+    .back { font-size: 22px; color: var(--text-main); text-decoration: none; }
+    .title { font-size: 16px; font-weight: 700; margin-left: 12px; flex: 1; }
+    .add { color: var(--primary); font-size: 14px; cursor: pointer; }
+    .card { background: var(--bg-card); border-radius: var(--radius-md); margin: 12px 16px; padding: 14px; }
+    .addr-main { font-size: 15px; font-weight: 700; color: var(--text-main); }
+    .addr-txt { font-size: 13px; color: var(--text-main); margin: 4px 0; }
+    .def { font-size: 10px; color: var(--primary); border: 1px solid var(--primary); border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
+    .ops { display: flex; gap: 16px; margin-top: 8px; }
+    .ops a { font-size: 13px; color: var(--primary); cursor: pointer; }
+    .ops .del { color: #EF4444; }
+    .lbl { font-size: 12px; color: var(--text-sub); margin: 8px 0 4px; }
+    .form input { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; font-size: 14px; background: var(--bg-card); color: var(--text-main); }
+    .empty { text-align: center; color: var(--text-hint); padding: 60px 0; font-size: 13px; }
+    .btns { display: flex; gap: 10px; margin-top: 12px; }
+    .btn { flex: 1; text-align: center; border: 1px solid var(--primary); color: var(--primary); background: var(--bg-card); padding: 10px; border-radius: 20px; font-size: 14px; cursor: pointer; }
+    .btn.save { background: var(--primary); color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="app-header">
+    <a class="back" href="profile.html">&larr;</a><span class="title">收货地址</span>
+    <span class="add" @click="startAdd">＋ 新增</span>
+  </div>
+
+  <div id="app">
+    <div class="empty" v-if="!loading && list.length === 0">还没有常用地址<br><span style="color:var(--primary);cursor:pointer;" @click="startAdd">点此新增</span></div>
+    <div class="card" v-for="a in list" :key="a.id">
+      <div class="addr-main">{{ a.receiverName }} · {{ a.receiverPhone }}<span class="def" v-if="a.isDefault === 1">默认</span></div>
+      <div class="addr-txt">{{ a.receiverAddress }}</div>
+      <div class="ops">
+        <a v-if="a.isDefault !== 1" @click="setDefault(a)">设为默认</a>
+        <a @click="startEdit(a)">编辑</a>
+        <a class="del" @click="del(a)">删除</a>
+      </div>
+    </div>
+
+    <div class="card form" v-if="showForm">
+      <div class="addr-main" style="margin-bottom:6px;">{{ form.id ? '编辑地址' : '新增地址' }}</div>
+      <div class="lbl">收货人</div>
+      <input v-model="form.receiverName" placeholder="姓名">
+      <div class="lbl">电话</div>
+      <input v-model="form.receiverPhone" type="tel" maxlength="11" placeholder="11 位手机号">
+      <div class="lbl">收货地址</div>
+      <input v-model="form.receiverAddress" placeholder="省市区 + 详细地址">
+      <div class="btns">
+        <button class="btn" @click="showForm = false">取消</button>
+        <button class="btn save" @click="save">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/vue.min.js"></script>
+  <script src="js/axios.min.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    const API = '/api';
+    new Vue({
+      el: '#app',
+      data() { return { list: [], loading: true, showForm: false, form: { id: null, receiverName: '', receiverPhone: '', receiverAddress: '' } }; },
+      created() { this.load(); },
+      methods: {
+        async load() {
+          this.loading = true;
+          try {
+            const res = await axios.get(API + '/address/list');
+            this.list = (res.data && res.data.data) || [];
+          } catch (e) {
+            if (e.response && e.response.status === 401) { sessionStorage.setItem('redirectAfterLogin', location.href); location.href = 'login.html'; return; }
+            this.list = [];
+          } finally { this.loading = false; }
+        },
+        startAdd() { this.form = { id: null, receiverName: '', receiverPhone: '', receiverAddress: '' }; this.showForm = true; },
+        startEdit(a) { this.form = { id: a.id, receiverName: a.receiverName, receiverPhone: a.receiverPhone, receiverAddress: a.receiverAddress }; this.showForm = true; },
+        async save() {
+          if (!this.form.receiverName || !this.form.receiverPhone || !this.form.receiverAddress) { Utils.toast('请填写完整'); return; }
+          try {
+            const method = this.form.id ? 'put' : 'post';
+            const res = await axios({ method, url: API + '/address', data: this.form });
+            if (res.data && res.data.success) { Utils.toast('已保存'); this.showForm = false; this.load(); }
+            else Utils.toast((res.data && res.data.errorMsg) || '保存失败');
+          } catch (e) { Utils.toast('保存失败'); }
+        },
+        async setDefault(a) {
+          try {
+            const res = await axios.put(API + '/address/default/' + a.id);
+            if (res.data && res.data.success) { Utils.toast('已设为默认'); this.load(); }
+            else Utils.toast((res.data && res.data.errorMsg) || '操作失败');
+          } catch (e) { Utils.toast('操作失败'); }
+        },
+        async del(a) {
+          if (!confirm('确定删除该地址吗？')) return;
+          try {
+            const res = await axios.delete(API + '/address/' + a.id);
+            if (res.data && res.data.success) { Utils.toast('已删除'); this.load(); }
+            else Utils.toast((res.data && res.data.errorMsg) || '删除失败');
+          } catch (e) { Utils.toast('删除失败'); }
+        },
+      },
+    });
+  </script>
+</body>
+</html>

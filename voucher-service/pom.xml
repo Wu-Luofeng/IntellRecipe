@@ -18,6 +18,12 @@
             <artifactId>intellrecipe-common</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+        <!-- 引入 Feign 契约模块（作为 use/release 内部接口的被调用方，复用契约 DTO） -->
+        <dependency>
+            <groupId>com.springboot</groupId>
+            <artifactId>intellrecipe-api</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
         <!-- Spring MVC -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

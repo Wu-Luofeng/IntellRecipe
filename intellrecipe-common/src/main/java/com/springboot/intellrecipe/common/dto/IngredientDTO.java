@@ -13,6 +13,8 @@ public class IngredientDTO implements Serializable {
     private String description;
     /** 单位热量文案，与实体 nutritionValue 一致 */
     private String nutritionValue;
+    /** 序列号（从1开始连续递增） */
+    private Integer seqNo;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

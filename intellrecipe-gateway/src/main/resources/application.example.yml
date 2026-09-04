@@ -1,0 +1,41 @@
+﻿server:
+  port: 10010
+
+spring:
+  application:
+    name: intellrecipe-gateway
+  
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+    
+    gateway:
+      discovery:
+        locator:
+          enabled: true # 开启服务注册和发现的功能
+      # 避免下游偶发慢查询 / 冷启动时 Nginx 先 504
+      httpclient:
+        connect-timeout: 15000
+        response-timeout: 120s
+      routes:
+        - id: user-service
+          uri: lb://user-service # lb: load balance 负载均衡
+          predicates:
+            - Path=/user/**, /upload/**, /address/**
+        - id: item-service
+          uri: lb://item-service
+          predicates:
+            - Path=/items/**, /search/**, /shop/**, /merchant/**, /product/**, /ingredient/**, /shop-type/**, /cart/**, /order/**, /admin/**
+        - id: voucher-service
+          uri: lb://voucher-service
+          predicates:
+            - Path=/voucher/**, /seckill/**, /vouchers/**, /voucher-orders/**
+        - id: diet-service
+          uri: lb://diet-service
+          predicates:
+            - Path=/diet/**
+        - id: recipe-service
+          uri: lb://recipe-service
+          predicates:
+            - Path=/recipe/**

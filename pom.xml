@@ -18,6 +18,8 @@
 
   <modules>
     <module>intellrecipe-common</module>
+    <module>intellrecipe-api</module>
+
     <module>user-service</module>
     <module>voucher-service</module>
     <module>item-service</module>

@@ -14,6 +14,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.cloud.openfeign.EnableFeignClients;
+
 
 import com.springboot.intellrecipe.item.service.IngredientService;
 
@@ -22,6 +24,8 @@ import com.springboot.intellrecipe.item.service.IngredientService;
 @EnableDiscoveryClient
 @ComponentScan(basePackages = {"com.springboot.intellrecipe.item", "com.springboot.intellrecipe.common"}) // 扫描common包
 @EnableAspectJAutoProxy(exposeProxy = true)
+@EnableFeignClients(basePackages = {"com.springboot.intellrecipe.api.client"})
+
 @EnableScheduling
 public class ItemApplication {
 

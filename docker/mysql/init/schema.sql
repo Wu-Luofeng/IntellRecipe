@@ -157,9 +157,91 @@ CREATE TABLE `voucher_order` (
   `pay_time` datetime DEFAULT NULL COMMENT '支付时间',
   `use_time` datetime DEFAULT NULL COMMENT '核销时间',
   `refund_time` datetime DEFAULT NULL COMMENT '退款时间',
+  `used_order_no` varchar(32) DEFAULT NULL COMMENT '关联商城订单号（结算抵现核销）',
+  `used_order_id` bigint(20) DEFAULT NULL COMMENT '关联商城订单主键ID',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_voucher_id` (`voucher_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='优惠券订单表';
+
+-- ---------------------------------------------------------------------------
+-- 商城订单体系（购物车结算闭环），字段含义见 migration/20260902_trade_order.sql
+-- ---------------------------------------------------------------------------
+DROP TABLE IF EXISTS `trade_order`;
+CREATE TABLE `trade_order` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `order_no` varchar(32) NOT NULL COMMENT '业务订单号（全局唯一，对外展示/追溯）',
+  `user_id` bigint(20) NOT NULL COMMENT '下单用户ID',
+  `merchant_id` bigint(20) DEFAULT NULL COMMENT '商家ID（多商家整单为空，以明细为准）',
+  `merchant_name` varchar(64) DEFAULT NULL COMMENT '商家名称快照（多商家订单可空）',
+  `voucher_merchant_id` bigint(20) DEFAULT NULL COMMENT '所用优惠券所属商家ID（按该商家小计校验门槛）',
+  `total_amount` decimal(10,2) NOT NULL COMMENT '商品总额',
+  `discount_amount` decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT '优惠券抵扣金额',
+  `pay_amount` decimal(10,2) NOT NULL COMMENT '应付金额 = total - discount',
+  `voucher_order_id` bigint(20) DEFAULT NULL COMMENT '使用的券实例ID（voucher_order.id）',
+  `voucher_title` varchar(255) DEFAULT NULL COMMENT '使用的券标题（快照）',
+  `receiver_name` varchar(50) DEFAULT NULL COMMENT '收货人',
+  `receiver_phone` varchar(20) DEFAULT NULL COMMENT '收货电话',
+  `receiver_address` varchar(255) DEFAULT NULL COMMENT '收货地址',
+  `remark` varchar(255) DEFAULT NULL COMMENT '买家备注',
+  `client_token` varchar(40) DEFAULT NULL COMMENT '结算幂等键（同一结算会话唯一）',
+  `status` tinyint NOT NULL DEFAULT 4 COMMENT '4:处理中 0:待支付 1:已支付 2:已完成 3:已取消 5:下单失败',
+  `fail_reason` varchar(500) DEFAULT NULL COMMENT '下单失败原因（status=5）',
+  `pay_time` datetime DEFAULT NULL COMMENT '支付时间',
+  `finish_time` datetime DEFAULT NULL COMMENT '完成时间',
+  `cancel_time` datetime DEFAULT NULL COMMENT '取消时间',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '下单时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_order_no` (`order_no`),
+  UNIQUE KEY `uk_user_client_token` (`user_id`, `client_token`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_merchant_id` (`merchant_id`),
+  KEY `idx_status_time` (`status`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商城订单表';
+
+DROP TABLE IF EXISTS `trade_order_item`;
+CREATE TABLE `trade_order_item` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `order_no` varchar(32) NOT NULL COMMENT '订单号',
+  `merchant_id` bigint(20) NOT NULL COMMENT '商家ID',
+  `product_id` bigint(20) NOT NULL COMMENT '商品ID',
+  `product_name` varchar(64) NOT NULL COMMENT '商品名称（快照）',
+  `product_image` varchar(255) DEFAULT NULL COMMENT '商品图片（快照）',
+  `price` decimal(10,2) NOT NULL COMMENT '成交单价（快照）',
+  `quantity` int NOT NULL COMMENT '购买数量',
+  `subtotal` decimal(10,2) NOT NULL COMMENT '小计 = price * quantity',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_order_no` (`order_no`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商城订单明细表';
+
+DROP TABLE IF EXISTS `trade_order_status_log`;
+CREATE TABLE `trade_order_status_log` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `order_no` varchar(32) NOT NULL COMMENT '订单号',
+  `from_status` tinyint DEFAULT NULL COMMENT '原状态',
+  `order_status` tinyint NOT NULL COMMENT '变更后状态',
+  `operator` varchar(32) DEFAULT NULL COMMENT '操作人/系统',
+  `remark` varchar(255) DEFAULT NULL COMMENT '说明',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '发生时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_order_no` (`order_no`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单状态流转日志表';
+
+-- 收货地址簿（增量脚本 migration/20260902c_user_address.sql）
+DROP TABLE IF EXISTS `user_address`;
+CREATE TABLE `user_address` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
+  `receiver_name` varchar(50) NOT NULL COMMENT '收货人',
+  `receiver_phone` varchar(20) NOT NULL COMMENT '收货电话',
+  `receiver_address` varchar(255) NOT NULL COMMENT '收货地址',
+  `is_default` tinyint NOT NULL DEFAULT 0 COMMENT '是否默认 0:否 1:是',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='收货地址簿';
 

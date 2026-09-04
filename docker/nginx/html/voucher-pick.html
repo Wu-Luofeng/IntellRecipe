@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>选择优惠券 - IntellRecipe</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/theme.css">
+  <style>
+    body { background: var(--bg); padding-top: var(--header-h); padding-bottom: 24px; }
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: var(--bg-card);
+      display: flex; align-items: center; padding: 0 16px; z-index: 100; border-bottom: 1px solid var(--border); }
+    .back { font-size: 22px; color: var(--text-main); text-decoration: none; }
+    .title { font-size: 16px; font-weight: 700; margin-left: 12px; flex: 1; }
+    .hint { background: var(--primary-light); color: var(--primary); font-size: 12px; margin: 12px 16px 0; padding: 8px 12px; border-radius: var(--radius-sm); }
+    .sec { font-size: 12px; color: var(--text-sub); margin: 14px 18px 6px; }
+    .item { background: var(--bg-card); border-radius: var(--radius-md); margin: 8px 16px; padding: 12px 14px; cursor: pointer; }
+    .item .t { font-size: 14px; font-weight: 600; color: var(--text-main); }
+    .item .sub { font-size: 11px; color: var(--text-hint); margin-left: 6px; }
+    .item .d { font-size: 12px; color: var(--accent); margin-top: 3px; }
+    .item.dim { opacity: .45; cursor: not-allowed; }
+    .item.dim .d { color: #EF4444; }
+    .empty { text-align: center; color: var(--text-hint); padding: 60px 0; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="app-header">
+    <a class="back" href="checkout.html">&larr;</a><span class="title">选择优惠券</span>
+  </div>
+
+  <div id="app" v-cloak>
+    <div class="hint" v-if="summary">本单满减按商家分别计算；优惠券整单限选一张，点击即可使用。</div>
+
+    <div class="sec" v-if="available.length">可用优惠券</div>
+    <div class="empty" v-if="!loading && summary && available.length === 0">当前没有可用优惠券，去结算页继续提交即可</div>
+
+    <div class="item" v-for="it in available" :key="it.v.orderId" @click="pick(it)">
+      <div class="t">{{ it.v.title }}<span class="sub">商家 #{{ it.g.merchantId }}</span></div>
+      <div class="d">抵 ￥{{ money(it.v.payValue / 100) }} · {{ it.v.actualValue > 0 ? '满 ￥' + money(it.v.actualValue / 100) + ' 可用' : '无门槛可用' }}</div>
+    </div>
+
+    <div class="sec" v-if="unavailable.length">暂不可用（未达使用门槛）</div>
+    <div class="item dim" v-for="it in unavailable" :key="'u' + it.v.orderId">
+      <div class="t">{{ it.v.title }}<span class="sub">商家 #{{ it.g.merchantId }}</span></div>
+      <div class="d">抵 ￥{{ money(it.v.payValue / 100) }} · 本单商品未满 ￥{{ money(it.v.actualValue / 100) }}</div>
+    </div>
+
+    <div class="empty" v-if="!summary">请先从购物车进入结算再选择优惠券<br><a href="cart.html" style="color:var(--primary);">去购物车</a></div>
+  </div>
+
+  <script src="js/vue.min.js"></script>
+  <script src="js/axios.min.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    const API = '/api';
+    new Vue({
+      el: '#app',
+      data() { return { summary: null, available: [], unavailable: [], loading: true }; },
+      created() { this.init(); },
+      methods: {
+        money(v) { return (v == null || isNaN(v)) ? '0.00' : Number(v).toFixed(2); },
+        async init() {
+          let raw = null;
+          try { raw = sessionStorage.getItem('checkoutSummary'); } catch (e) { /* ignore */ }
+          if (!raw) { this.loading = false; return; }
+          let groups = [];
+          try { groups = (JSON.parse(raw).groups) || []; } catch (e) { this.loading = false; return; }
+          this.summary = groups;
+          const all = [];
+          for (const g of groups) {
+            try {
+              const res = await axios.get(API + '/voucher-orders/usable?shopId=' + g.merchantId);
+              const list = (res.data && res.data.data) || [];
+              list.forEach(v => all.push({ v, g }));
+            } catch (e) { /* skip */ }
+          }
+          this.available = all.filter(it => {
+            if (it.v.actualValue > 0) return (it.g.subtotal * 100) >= Number(it.v.actualValue);
+            return true;
+          });
+          this.unavailable = all.filter(it => !(this.available.indexOf(it) >= 0));
+          this.loading = false;
+        },
+        pick(it) {
+          try {
+            sessionStorage.setItem('pickVoucher', JSON.stringify({ id: String(it.v.orderId), title: it.v.title }));
+          } catch (e) { /* ignore */ }
+          location.href = 'checkout.html';
+        },
+      },
+    });
+  </script>
+</body>
+</html>

@@ -39,5 +39,11 @@ public class VoucherOrder implements Serializable {
 
     private LocalDateTime refundTime;
 
+    /** 结算抵现核销时关联的商城订单号（voucher_order → trade_order 追溯） */
+    private String usedOrderNo;
+
+    /** 结算抵现核销时关联的商城订单主键ID */
+    private Long usedOrderId;
+
     private LocalDateTime updateTime;
 }

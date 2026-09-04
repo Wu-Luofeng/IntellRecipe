@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>确认订单 - IntellRecipe</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/theme.css">
+  <style>
+    body { background: var(--bg); padding-top: var(--header-h); }
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-h);
+      background: var(--bg-card); display: flex; align-items: center; padding: 0 16px; z-index: 100;
+      border-bottom: 1px solid var(--border); }
+    .back { font-size: 22px; color: var(--text-main); cursor: pointer; text-decoration: none; }
+    .title { font-size: 16px; font-weight: 700; margin-left: 12px; }
+    .card { background: var(--bg-card); border-radius: var(--radius-md); margin: 12px 16px; padding: 14px; }
+    .card-h { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 10px; }
+    .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+    .row:last-child { border-bottom: none; }
+    .thumb { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; background: var(--bg); flex-shrink: 0; }
+    .info { flex: 1; min-width: 0; font-size: 13px; color: var(--text-main); }
+    .sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+    .price { color: var(--accent); font-weight: 600; }
+    select, input, textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px; font-size: 14px; background: var(--bg-card); color: var(--text-main); }
+    .lbl { font-size: 12px; color: var(--text-sub); margin: 8px 0 4px; }
+    .vou-hd { display: flex; justify-content: space-between; align-items: center; padding: 8px 2px; font-size: 14px; font-weight: 600; color: var(--text-main); cursor: pointer; }
+    .vou-hd .arrow { color: var(--text-hint); font-size: 12px; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .vou-box { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; margin-top: 4px; }
+    .vou-item { display: block; padding: 8px 2px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .vou-item:last-child { border-bottom: none; }
+    .vou-item.on { background: var(--primary-light); }
+    .vou-item.off { opacity: .45; cursor: not-allowed; }
+    .vou-row1 { display: flex; align-items: center; gap: 8px; }
+    .vou-row1 input { accent-color: var(--primary); flex-shrink: 0; }
+    .vou-title { font-size: 13px; color: var(--text-main); text-align: left; }
+    .vou-sub { color: var(--text-hint); font-size: 11px; margin-left: 6px; }
+    .vou-desc { font-size: 11px; color: var(--text-sub); text-align: left; padding-left: 21px; margin-top: 2px; }
+    .vou-desc.bad { color: #EF4444; }
+    .vou-desc.good { color: var(--text-sub); }
+    .vou-empty { padding: 12px; font-size: 13px; color: var(--text-hint); text-align: center; }
+    .vou-sub { color: var(--text-hint); font-size: 11px; margin-left: 6px; }
+    .addr-item { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 9px 2px; border-bottom: 1px dashed var(--border); cursor: pointer; }
+    .addr-item.on { background: var(--primary-light); }
+    .addr-item input { accent-color: var(--primary); }
+    .addr-main { font-size: 13px; font-weight: 600; color: var(--text-main); }
+    .addr-txt { font-size: 12px; color: var(--text-sub); flex-basis: 100%; padding-left: 18px; }
+    .addr-def { font-size: 10px; color: var(--primary); border: 1px solid var(--primary); border-radius: 4px; padding: 0 4px; }
+    .addr-ops { display: flex; gap: 16px; font-size: 13px; color: var(--primary); padding: 8px 2px 0; }
+    .addr-ops a { color: var(--primary); cursor: pointer; }
+    .mini-btn { margin-top: 8px; border: 1px solid var(--primary); color: var(--primary); background: var(--bg-card); padding: 6px 14px; border-radius: 16px; font-size: 13px; cursor: pointer; }
+    .bar .sum { display: flex; flex-direction: column; gap: 2px; }
+    .payrow b { color: var(--accent); font-size: 18px; }
+    .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg-card);
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center;
+      border-top: 1px solid var(--border); }
+    .bar .sum { flex: 1; font-size: 13px; color: var(--text-sub); }
+    .bar .pay { font-size: 16px; font-weight: 700; color: var(--accent); }
+    .btn-main { border: none; background: var(--primary); color: #fff; padding: 12px 26px;
+      border-radius: 24px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .tip { text-align: center; color: var(--text-sub); font-size: 13px; padding: 8px 0 96px; }
+    .empty { text-align: center; color: var(--text-hint); padding: 60px 0; }
+    [v-cloak] { display: none; }
+    .sum-off { font-size: 12px; color: var(--accent); }
+    .sum-pay { font-size: 15px; color: var(--text-main); }
+    .sum-pay b { font-size: 20px; color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="app-header">
+    <a class="back" href="cart.html">&larr;</a><span class="title">确认订单</span>
+  </div>
+
+  <div id="app" style="padding-bottom: 84px;" v-cloak>
+    <div v-if="groups.length === 0" class="empty">加载中…</div>
+
+    <!-- 收货地址簿（放最上方，可直接选用/管理） -->
+    <div class="card">
+      <div class="card-h">收货地址</div>
+      <template v-if="addresses.length && !manual">
+        <label v-for="a in addresses" :key="a.id" class="addr-item"
+               :class="{ on: addressId === String(a.id) }">
+          <input type="radio" :value="String(a.id)" v-model="addressId">
+          <span class="addr-main">{{ a.receiverName }} · {{ a.receiverPhone }}</span>
+          <span class="addr-def" v-if="a.isDefault === 1">默认</span>
+          <span class="addr-txt">{{ a.receiverAddress }}</span>
+        </label>
+        <div class="addr-ops">
+          <a @click="manual = true">＋ 使用新地址</a>
+          <a href="addresses.html">管理地址 ›</a>
+        </div>
+      </template>
+      <template v-else>
+        <div class="lbl">收货人</div>
+        <input v-model="receiverName" placeholder="姓名">
+        <div class="lbl">电话</div>
+        <input v-model="receiverPhone" type="tel" maxlength="11" placeholder="11 位手机号">
+        <div class="lbl">收货地址</div>
+        <textarea v-model="receiverAddress" rows="2" placeholder="收货地址"></textarea>
+        <button class="mini-btn" @click="saveAsCommon">保存为常用地址</button>
+        <div class="addr-ops">
+          <a v-if="addresses.length" @click="manual = false">← 返回选择地址</a>
+          <a v-else href="addresses.html">管理常用地址 ›</a>
+        </div>
+      </template>
+      <div class="lbl" style="margin-top: 10px;">订单备注（选填）</div>
+      <input v-model="remark" placeholder="配送/包装等备注">
+    </div>
+
+    <div class="card" v-for="g in groups" :key="g.merchantId">
+      <div class="card-h">商家 #{{ g.merchantId }}</div>
+      <div class="row" v-for="it in g.items" :key="it.id">
+        <img class="thumb" :src="it.productImage || ''" @error="$event.target.style.display='none'">
+        <div class="info">
+          <div>{{ it.productName }}</div>
+          <div class="sub">￥{{ money(it.productPrice) }} × {{ it.quantity }}</div>
+        </div>
+        <div class="price">￥{{ money(Number(it.productPrice) * it.quantity) }}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="vou-hd" @click="goPick">
+        <span>优惠券</span>
+        <span class="arrow">{{ chosenText || '未选择' }} ›</span>
+      </div>
+    </div>
+
+    <div class="tip" v-if="submitting">{{ tip }}</div>
+
+    <div class="bar">
+      <div class="sum">
+        <div class="sum-off" v-if="discount > 0">已优惠 ￥{{ money(discount) }}</div>
+        <div class="sum-pay">应付 <b>￥{{ money(pay) }}</b></div>
+      </div>
+      <button class="btn-main" @click="submit" :disabled="submitting">{{ submitting ? '处理中…' : '提交订单' }}</button>
+    </div>
+  </div>
+
+  <script src="js/vue.min.js"></script>
+  <script src="js/axios.min.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    const API = '/api';
+    function genToken() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+    new Vue({
+      el: '#app',
+      data() {
+        return {
+          groups: [], addresses: [], addressId: '', manual: false,
+          receiverName: '', receiverPhone: '', receiverAddress: '', remark: '',
+          submitting: false, tip: '', orderNos: [], pollCount: 0, vouOpen: true, chosenVoucher: '', clientToken: '',
+        };
+      },
+      computed: {
+        voucherList() {
+          const list = [];
+          this.groups.forEach(g => g.usable.forEach(v => list.push({ v, g })));
+          return list;
+        },
+        chosenText() {
+          if (!this.chosenVoucher) return '';
+          const it = this.voucherList.find(x => String(x.v.orderId) === String(this.chosenVoucher));
+          return it ? it.v.title : '';
+        },
+        total() {
+          return this.groups.reduce((s, g) => s + g.items.reduce((x, i) => x + Number(i.productPrice) * i.quantity, 0), 0);
+        },
+        discount() {
+          const it = this.voucherList.find(x => String(x.v.orderId) === String(this.chosenVoucher));
+          return it ? Number(it.v.payValue) / 100 : 0;
+        },
+        pay() { return Math.max(0, this.total - this.discount); },
+      },
+      created() {
+        let t = null;
+        try { t = sessionStorage.getItem('orderClientToken'); } catch (e) { /* ignore */ }
+        if (!t) { t = genToken(); try { sessionStorage.setItem('orderClientToken', t); } catch (e) { /* ignore */ } }
+        this.clientToken = t;
+        this.load(); this.loadAddresses(); this.restorePick();
+      },
+      methods: {
+        money(v) {
+          if (v == null || isNaN(v)) return '0.00';
+          return Number(v).toFixed(2);
+        },
+        async load() {
+          try {
+            const res = await axios.get(API + '/cart/list');
+            const items = ((res.data && res.data.data) || []).filter(i => i.selected === 1);
+            if (!items.length) {
+              Utils.toast('没有可结算的商品');
+              setTimeout(() => { location.href = 'cart.html'; }, 800);
+              return;
+            }
+            const map = {};
+            items.forEach(it => {
+              const key = it.merchantId;
+              if (!map[key]) map[key] = { merchantId: key, items: [], usable: [], chosen: '', open: false };
+              map[key].items.push(it);
+            });
+            this.groups = Object.values(map);
+            await Promise.all(this.groups.map(async g => {
+              try {
+                const u = await axios.get(API + '/voucher-orders/usable?shopId=' + g.merchantId);
+                g.usable = (u.data && u.data.data) || [];
+              } catch (e) { g.usable = []; }
+            }));
+          } catch (e) {
+            if (e.response && e.response.status === 401) { sessionStorage.setItem('redirectAfterLogin', location.href); location.href = 'login.html'; return; }
+            Utils.toast('加载失败');
+          }
+        },
+        onVoucherChange(changed) {
+          this.groups.forEach(g => { if (g !== changed) g.chosen = ''; }); // 整单最多一张券
+        },
+        canUse(g, v) {
+          const gTotal = g.items.reduce((x, i) => x + Number(i.productPrice) * i.quantity, 0);
+          return !(v.actualValue > 0 && (gTotal * 100) < Number(v.actualValue));
+        },
+        canUseV(it) {
+          return this.canUse(it.g, it.v);
+        },
+        descText(it) {
+          const amt = '抵 ￥' + this.money(it.v.payValue / 100);
+          if (!this.canUseV(it)) return amt + ' · 未满 ￥' + this.money(it.v.actualValue / 100) + '，暂不可用';
+          if (it.v.actualValue > 0) return amt + ' · 满 ￥' + this.money(it.v.actualValue / 100) + ' 可用';
+          return amt + ' · 无门槛可用';
+        },
+        descCls(it) {
+          return this.canUseV(it) ? 'good' : 'bad';
+        },
+        goPick() {
+          const groups = (this.groups || []).map(g => ({
+            merchantId: g.merchantId,
+            subtotal: g.items.reduce((x, i) => x + Number(i.productPrice) * i.quantity, 0),
+          }));
+          sessionStorage.setItem('checkoutSummary', JSON.stringify({ groups }));
+          location.href = 'voucher-pick.html';
+        },
+        restorePick() {
+          try {
+            const raw = sessionStorage.getItem('pickVoucher');
+            if (raw) {
+              const obj = JSON.parse(raw);
+              if (obj && obj.id) this.chosenVoucher = obj.id;
+              sessionStorage.removeItem('pickVoucher');
+            }
+          } catch (e) { /* ignore */ }
+        },
+        async loadAddresses() {
+          try {
+            const res = await axios.get(API + '/address/list');
+            const list = (res.data && res.data.data) || [];
+            this.addresses = list;
+            if (list.length) {
+              const def = list.find(a => a.isDefault === 1) || list[0];
+              this.addressId = String(def.id);
+              this.manual = false;
+            } else {
+              this.manual = true;
+            }
+          } catch (e) {
+            this.addresses = [];
+            this.manual = true;
+          }
+        },
+        async saveAsCommon() {
+          if (!this.receiverName || !this.receiverPhone || !this.receiverAddress) {
+            Utils.toast('请先填写完整地址再保存'); return;
+          }
+          try {
+            const res = await axios.post(API + '/address', {
+              receiverName: this.receiverName, receiverPhone: this.receiverPhone, receiverAddress: this.receiverAddress,
+            });
+            if (res.data && res.data.success) {
+              Utils.toast('已保存为常用地址');
+              this.manual = false;
+              await this.loadAddresses();
+            } else {
+              Utils.toast((res.data && res.data.errorMsg) || '保存失败');
+            }
+          } catch (e) { Utils.toast('保存失败'); }
+        },
+        async submit() {
+          if (this.submitting) return;
+          const chosen = this.addresses.find(a => String(a.id) === String(this.addressId)) || null;
+          const rn = chosen ? chosen.receiverName : this.receiverName;
+          const rp = chosen ? chosen.receiverPhone : this.receiverPhone;
+          const ra = chosen ? chosen.receiverAddress : this.receiverAddress;
+          if (!rn || !rp || !ra) {
+            Utils.toast('请选择或填写收货地址'); return;
+          }
+          const voucherId = this.chosenVoucher || null;
+          this.submitting = true;
+          this.tip = '正在提交…';
+          try {
+            const payload = { receiverName: rn, receiverPhone: rp, receiverAddress: ra, remark: this.remark || '', clientToken: this.clientToken };
+            if (voucherId) payload.voucherOrderId = voucherId;
+            const res = await axios.post(API + '/order/create', payload);
+            if (!(res.data && res.data.success)) {
+              this.submitting = false;
+              Utils.toast((res.data && res.data.errorMsg) || '下单失败，请重试');
+              return;
+            }
+            this.orderNos = res.data.data || [];
+            try { sessionStorage.removeItem('orderClientToken'); } catch (e) { /* ignore */ }
+            this.tip = '下单受理成功，正在异步完成订单…';
+            this.poll();
+          } catch (e) {
+            this.submitting = false;
+            Utils.toast('网络异常，请稍后重试');
+          }
+        },
+        poll() {
+          if (this.pollCount >= 20) { location.href = 'orders.html'; return; }
+          this.pollCount++;
+          const nos = this.orderNos.slice();
+          if (!nos.length) { location.href = 'orders.html'; return; }
+          Promise.all(nos.map(no => axios.get(API + '/order/status?orderNo=' + no).catch(() => null)))
+            .then(list => {
+              const done = list.every(r => r && r.data && r.data.data && r.data.data.status !== 4);
+              if (done) { location.href = 'orders.html'; }
+              else { setTimeout(() => this.poll(), 700); }
+            });
+        },
+      },
+    });
+  </script>
+</body>
+</html>

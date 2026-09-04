@@ -1,4 +1,4 @@
-﻿package com.springboot.intellrecipe.service.impl;
+package com.springboot.intellrecipe.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.lang.UUID;

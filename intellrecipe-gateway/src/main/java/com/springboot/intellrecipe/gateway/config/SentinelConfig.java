@@ -30,12 +30,12 @@ public class SentinelConfig implements GlobalFilter, Ordered {
      * 初始化热点参数限流规则
      * 资源名：user_rate_limit
      * 参数索引：0 (第一个参数，即 Token)
-     * 阈值：5 QPS
+     * 阈值：100 QPS（避免正常联调频繁触发；仅作兜底防刷）
      */
     private void initParamFlowRules() {
         ParamFlowRule rule = new ParamFlowRule("user_rate_limit")
                 .setParamIdx(0) // 对第 0 个参数限流
-                .setCount(5)    // QPS 阈值
+                .setCount(100)  // QPS 阈值
                 .setDurationInSec(1); // 统计窗口时长 1秒
         ParamFlowRuleManager.loadRules(Collections.singletonList(rule));
     }
@@ -72,8 +72,10 @@ public class SentinelConfig implements GlobalFilter, Ordered {
     private Mono<Void> handleBlockException(ServerWebExchange exchange) {
         exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        exchange.getResponse().getHeaders().set("Content-Type", "application/json; charset=utf-8");
         String body = "{\"code\": 429, \"message\": \"请求过于频繁，请稍后再试！\", \"success\": false}";
-        return exchange.getResponse().writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(body.getBytes())));
+        byte[] bytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        return exchange.getResponse().writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
     }
 
     @Override

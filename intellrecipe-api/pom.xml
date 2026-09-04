@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>IntellRecipe</artifactId>
+        <groupId>com.springboot</groupId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>intellrecipe-api</artifactId>
+    <description>服务间 Feign 契约与传输 DTO（调用方/被调方共用，避免业务实体堆入 common）</description>
+
+    <dependencies>
+        <!-- 引用统一响应体 Result -->
+        <dependency>
+            <groupId>com.springboot</groupId>
+            <artifactId>intellrecipe-common</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <!-- Feign 客户端接口注解 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+        <!-- Spring MVC 风格注解（@GetMapping/@PostMapping/@RequestBody） -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <!-- Lombok（父 POM 已声明 optional，此处显式以防 IDE 告警） -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <!-- 纯库模块：不做 Spring Boot 可执行 jar 重打包 -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

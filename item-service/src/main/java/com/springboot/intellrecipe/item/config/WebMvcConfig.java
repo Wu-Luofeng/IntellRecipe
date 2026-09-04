@@ -23,7 +23,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .order(0);
         // 2. 登录拦截器 (购物车需要登录)
         registry.addInterceptor(new LoginInterceptor())
-                .addPathPatterns("/cart/**")
+                .addPathPatterns("/cart/**", "/order/**")
                 .order(1);
     }
 }

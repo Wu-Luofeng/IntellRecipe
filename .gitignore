@@ -51,3 +51,14 @@ deploy/SERVER_ACCESS.local.md
 /*.bat
 /*.sh
 /int
+
+### Local runtime configs (services run on localhost; middleware via SSH tunnel). NOT committed.
+**/src/main/resources/application.yml
+/.local-*
+*.pid
+
+### 个人文档（含真实个人信息，禁止入库）
+/*简历*信息*.txt
+/简历*.txt
+
+

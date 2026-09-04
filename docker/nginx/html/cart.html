@@ -275,7 +275,9 @@
           }
         },
         checkout() {
-          Utils.toast('结算功能开发中…');
+          const sel = this.cartList.filter(i => i.selected === 1);
+          if (sel.length === 0) { Utils.toast('请先勾选要结算的商品'); return; }
+          location.href = 'checkout.html';
         },
         goShopList() {
           location.href = 'shop-list.html';

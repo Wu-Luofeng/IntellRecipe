@@ -69,6 +69,15 @@
     .pagination button:disabled { opacity: .4; cursor: not-allowed; }
     .pagination .page-info { font-size: 14px; color: var(--text-sub); }
 
+    /* 图片上传 */
+    .img-row { display: flex; gap: 8px; }
+    .img-row input { flex: 1; min-width: 0; }
+    .up-btn {
+      flex-shrink: 0; height: 42px; padding: 0 14px; border: none; border-radius: 8px;
+      background: var(--primary); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .img-preview { width: 84px; height: 84px; object-fit: cover; border-radius: 8px; margin-top: 8px; background: var(--bg); }
+
     /* 弹窗 */
     .modal-mask {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -234,8 +243,12 @@
               <input v-model="form.nutritionValue" placeholder="如：133千卡/100g">
             </div>
             <div class="form-row">
-              <label>图片URL</label>
-              <input v-model="form.image" placeholder="图片地址">
+              <label>图片</label>
+              <div class="img-row">
+                <input v-model="form.image" placeholder="/images/xxx.jpg、粘贴URL，或点右侧上传本地图片">
+                <button type="button" class="up-btn" @click="pickImage('image')">📁 上传</button>
+              </div>
+              <img v-if="form.image" class="img-preview" :src="form.image" @error="$event.target.style.display='none'">
             </div>
             <div class="form-row">
               <label>描述</label>
@@ -258,8 +271,12 @@
               <input v-model="form.phone" placeholder="联系电话">
             </div>
             <div class="form-row">
-              <label>图片URL</label>
-              <input v-model="form.images" placeholder="商家图片地址">
+              <label>图片</label>
+              <div class="img-row">
+                <input v-model="form.images" placeholder="粘贴URL，或点右侧上传本地图片">
+                <button type="button" class="up-btn" @click="pickImage('images')">📁 上传</button>
+              </div>
+              <img v-if="form.images" class="img-preview" :src="form.images" @error="$event.target.style.display='none'">
             </div>
             <div class="form-row">
               <label>评分</label>
@@ -293,8 +310,12 @@
               <input v-model="form.price" type="number" step="0.01" placeholder="如：28.00">
             </div>
             <div class="form-row">
-              <label>图片URL</label>
-              <input v-model="form.image" placeholder="商品图片地址">
+              <label>图片</label>
+              <div class="img-row">
+                <input v-model="form.image" placeholder="/images/xxx.jpg、粘贴URL，或点右侧上传本地图片">
+                <button type="button" class="up-btn" @click="pickImage('image')">📁 上传</button>
+              </div>
+              <img v-if="form.image" class="img-preview" :src="form.image" @error="$event.target.style.display='none'">
             </div>
             <div class="form-row">
               <label>重量</label>
@@ -316,6 +337,8 @@
               <textarea v-model="form.description" placeholder="商品描述（选填）"></textarea>
             </div>
           </template>
+          <!-- 本地图片文件选择器（被各「上传」按钮触发） -->
+          <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="doUpload">
         </div>
         <div class="modal-footer">
           <button class="btn-cancel" @click="showModal=false">取消</button>
@@ -343,6 +366,7 @@
         showModal: false,
         editing: false,
         form: {},
+        uploadField: '',
         merchants: [],
         toastShow: false,
         toastMsg: '',
@@ -380,6 +404,33 @@
         },
         prevPage() { if (this.page > 1) { this.page--; this.loadData(); } },
         nextPage() { if (this.page < this.totalPages) { this.page++; this.loadData(); } },
+        /* 选择本地图片并上传到服务器，返回的 URL 自动填入表单字段 */
+        pickImage(field) {
+          this.uploadField = field;
+          if (this.$refs.fileInput) {
+            this.$refs.fileInput.value = '';
+            this.$refs.fileInput.click();
+          }
+        },
+        async doUpload(e) {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const fd = new FormData();
+          fd.append('file', file);
+          try {
+            const res = await axios.post('/api/upload/img', fd, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            if (res.data && res.data.success) {
+              this.form[this.uploadField] = res.data.data;
+              this.showToast('图片已上传并填入，保存后生效');
+            } else {
+              this.showToast((res.data && res.data.errorMsg) || '上传失败');
+            }
+          } catch (err) {
+            this.showToast('图片上传失败，请重试');
+          }
+        },
         openAdd() {
           this.editing = false;
           this.form = {};
