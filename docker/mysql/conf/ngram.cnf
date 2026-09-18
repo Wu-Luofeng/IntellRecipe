@@ -1,0 +1,23 @@
+# IntellRecipe MySQL 全文检索配置（ngram parser）
+#
+# 背景：ES 不可用时，搜索降级到 MySQL。原先使用 LIKE '%单字%' 会导致索引失效、全表扫描。
+# 改为 MySQL 5.7.6+ 内置的 ngram 全文解析器，为中文/日文/韩文提供真正的倒排索引检索。
+#
+# 关键参数说明：
+#   ngram_token_size = 2
+#     - 中文二元切分："番茄炒蛋" → "番茄" "茄炒" "炒蛋"
+#     - 该变量是【只读】的，只能在启动时由配置文件指定，运行时 SET GLOBAL 无效，必须重启 MySQL
+#     - 设为 1 可以让单字也能检索，但索引体积膨胀且精度下降；2 是中文检索的通用取值
+#     - 注意：ngram parser 生成的 token 长度固定为 ngram_token_size，
+#       因此 innodb_ft_min_token_size / ft_min_word_len 对它【不生效】，无需同步修改
+#     - 副作用：token_size=2 时，单字关键词（如"米"）无法命中全文索引，
+#       由应用层做长度路由：>=2 字走 FULLTEXT，1 字走 LIKE 精确兜底（见 MysqlFullTextSearchStrategy）
+#
+# 修改本文件后需重建容器才生效：
+#   docker compose down mysql && docker compose up -d mysql
+# 验证：
+#   SHOW VARIABLES LIKE 'ngram_token_size';
+#   SHOW CREATE TABLE ingredient;   -- 应能看到 FULLTEXT KEY ft_name_desc ... WITH PARSER ngram
+
+[mysqld]
+ngram_token_size=2

@@ -26,13 +26,7 @@ import java.util.stream.Collectors;
 
 import com.springboot.intellrecipe.item.es.document.IngredientDoc;
 import com.springboot.intellrecipe.item.es.repository.IngredientRepository;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.Operator;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
-import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import com.springboot.intellrecipe.item.search.IngredientSearchChain;
 
 @Service
 public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredient> implements IngredientService {
@@ -45,11 +39,12 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    /** 检索降级责任链：ES → MySQL ngram 全文索引 → MySQL LIKE 兜底 */
+    @Resource
+    private IngredientSearchChain searchChain;
+
     /** 推荐食材数量 */
     private static final int RECOMMEND_SIZE = 8;
-
-    @Autowired(required = false)
-    private ElasticsearchRestTemplate elasticsearchRestTemplate;
 
     @Autowired(required = false)
     private IngredientRepository ingredientRepository;
@@ -78,60 +73,23 @@ public class IngredientServiceImpl extends ServiceImpl<IngredientMapper, Ingredi
         }
     }
 
+    /**
+     * 食材检索。
+     * <p>
+     * 检索实现已下沉到 {@link IngredientSearchChain} 责任链：
+     * ES 全文检索 → MySQL ngram 全文索引 → MySQL LIKE 兜底。
+     * 这里只做入参校验，不再关心具体用哪种方式检索、以及降级如何发生。
+     * <p>
+     * 改动前：ES 超时/异常后直接 catch 到 <code>searchFromDb()</code>，
+     * 而该方法是把关键词拆成单字拼一串 <code>LIKE '%x%' AND ...</code>，
+     * 前导通配符导致全表扫描，是整个搜索链路的性能洼地。
+     */
     @Override
     public List<IngredientDoc> search(String key) {
         if (key == null || key.trim().isEmpty()) {
-            return java.util.Collections.emptyList();
+            return Collections.emptyList();
         }
-
-        if (elasticsearchRestTemplate == null) {
-            return searchFromDb(key);
-        }
-
-        try {
-            // 构建查询：在 name 和 description 字段中搜索，使用 AND 操作符确保每个分词都匹配
-            NativeSearchQuery query = new NativeSearchQueryBuilder()
-                    .withQuery(QueryBuilders.multiMatchQuery(key, "name", "description").operator(Operator.AND))
-                    .withPageable(PageRequest.of(0, 20)) // 默认返回前20条
-                    .build();
-
-            SearchHits<IngredientDoc> hits = elasticsearchRestTemplate.search(query, IngredientDoc.class);
-
-            // 提取结果
-            return hits.getSearchHits().stream()
-                    .map(hit -> hit.getContent())
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error("ES搜索异常或超时，触发MySQL兜底查询, keyword: {}", key, e);
-            
-            return searchFromDb(key);
-        }
-    }
-
-    private List<IngredientDoc> searchFromDb(String key) {
-        // 将关键词拆成单字，每个字都要求在 name 或 description 中出现
-        // 这样搜索"生米"时，"大米(生)"中同时包含"生"和"米"就能匹配到
-        char[] chars = key.toCharArray();
-        LambdaQueryWrapper<Ingredient> queryWrapper = new LambdaQueryWrapper<>();
-        // 使用嵌套 OR：name 包含所有字 OR description 包含所有字
-        queryWrapper.and(w -> {
-            for (char c : chars) {
-                w.like(Ingredient::getName, String.valueOf(c));
-            }
-        }).or(w -> {
-            for (char c : chars) {
-                w.like(Ingredient::getDescription, String.valueOf(c));
-            }
-        }).last("LIMIT 20");
-
-        List<Ingredient> dbList = list(queryWrapper);
-
-        if (dbList == null || dbList.isEmpty()) {
-            return java.util.Collections.emptyList();
-        }
-        return dbList.stream()
-                .map(ingredient -> BeanUtil.copyProperties(ingredient, IngredientDoc.class))
-                .collect(Collectors.toList());
+        return searchChain.search(key);
     }
 
     @Override
