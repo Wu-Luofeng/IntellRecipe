@@ -1,0 +1,37 @@
+# ============================================================
+# IntellRecipe Agent Service 配置
+# 敏感项（api_key）优先从环境变量 LLM_API_KEY 读取，勿提交真实密钥
+# ============================================================
+
+llm:
+  # OpenAI 兼容接口均可（DeepSeek / 通义 / 本地 vLLM / one-api 等）
+  base_url: "https://api.deepseek.com/v1"
+  model: "deepseek-chat"
+  api_key: ""                # 留空则读环境变量 LLM_API_KEY
+  temperature: 0.6
+  max_tokens: 2048
+
+db:
+  host: "127.0.0.1"
+  port: 3307                 # docker 映射出的 MySQL 端口（intell_recipe 库）
+  user: "root"
+  password: "root"
+  database: "intell_recipe"
+  pool_min: 1
+  pool_max: 5
+
+api:
+  # 数据源统一走 Java 网关（Python 不直连数据库）
+  gateway_base: "http://localhost:10010"
+  timeout_seconds: 10
+  max_response_chars: 4000
+  # 数据来源接口契约：已存在的接口直接用；"计划新增"的由 Java 侧实现后即可生效
+  endpoints:
+    user_profile: "/user/me"                    # 已存在
+    today_diet: "/diet/today"                   # 已存在
+    user_preference: "/recipe/agent/preference" # 计划新增：GET 用户饮食偏好（token 鉴权）
+    recipes_search: "/recipe/agent/recipes"     # 计划新增：GET 菜品条件查询（keyword/cuisine/taste/maxCalories/minProtein/limit）
+
+agent:
+  max_iterations: 6          # ReAct 单轮最大工具调用次数
+  history_max_messages: 40   # 会话上下文保留的最大消息数

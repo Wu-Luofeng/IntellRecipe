@@ -69,6 +69,51 @@ function Invoke-Request {
         $path = $Context.Request.Url.AbsolutePath
         $method = $Context.Request.HttpMethod
 
+        if ($path.StartsWith("/agent/")) {
+            # Agent service proxy: /agent/* -> http://127.0.0.1:8800 (path preserved)
+            # 需先启动 agent-service（python run.py）。LLM 工具调用较慢，前端已按 120s 超时等待。
+            $target = "http://127.0.0.1:8800" + $path
+            if ($Context.Request.Url.Query) { $target += $Context.Request.Url.Query }
+
+            $req = [System.Net.HttpWebRequest]::Create($target)
+            $req.Method = $method
+            $req.Timeout = 120000
+            try { $req.ContentType = $Context.Request.ContentType } catch { }
+            foreach ($h in $Context.Request.Headers.AllKeys) {
+                if ($h -in @("Host", "Content-Length", "Connection", "Accept-Encoding")) { continue }
+                try { $req.Headers[$h] = $Context.Request.Headers[$h] } catch { }
+            }
+            if ($method -in @('POST', 'PUT', 'PATCH') -and $Context.Request.ContentLength64 -gt 0) {
+                $in = $Context.Request.InputStream
+                $out = $req.GetRequestStream()
+                $in.CopyTo($out)
+                $out.Dispose()
+            }
+            try {
+                $resp = $req.GetResponse()
+                try {
+                    $Context.Response.StatusCode = [int]$resp.StatusCode
+                    $Context.Response.ContentType = $resp.ContentType
+                    foreach ($hn in $resp.Headers.AllKeys) {
+                        if ($hn -in @("Transfer-Encoding", "Content-Length", "Connection", "Keep-Alive")) { continue }
+                        try { $Context.Response.Headers[$hn] = $resp.Headers[$hn] } catch { }
+                    }
+                    $resp.GetResponseStream().CopyTo($Context.Response.OutputStream)
+                } finally { $resp.Close() }
+            } catch [System.Net.WebException] {
+                $er = $_.Exception.Response
+                if ($er) {
+                    $Context.Response.StatusCode = [int]$er.StatusCode
+                    try { $er.GetResponseStream().CopyTo($Context.Response.OutputStream) } catch { }
+                } else {
+                    Send-TextResponse -Context $Context -Status 502 -Body ("Agent service unreachable: " + $_.Exception.Message)
+                }
+            } finally {
+                try { $Context.Response.Close() } catch { }
+            }
+            return
+        }
+
         if ($path.StartsWith("/api/")) {
             # Same rule as nginx: proxy_pass http://127.0.0.1:10010/  (strip /api)
             $target = $Gateway + $path.Substring(4)

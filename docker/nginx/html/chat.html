@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AI 智膳助手 - IntellRecipe</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/request.js"></script>
+  <style>
+    body { background: var(--bg-page); font-family: -apple-system, 'PingFang SC', sans-serif;
+           height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    .top-bar { position: sticky; top: 0; z-index: 100;
+      background: linear-gradient(135deg, var(--primary) 0%, #4dd9ac 100%);
+      padding: 12px 16px; display: flex; align-items: center; gap: 10px; color: #fff; }
+    .top-bar .back-btn { width: 32px; height: 32px; cursor: pointer; flex-shrink: 0; }
+    .top-bar h1 { flex: 1; font-size: 17px; font-weight: 600; margin: 0; }
+    .login-chip { font-size: 11px; background: rgba(255,255,255,.2); padding: 4px 10px;
+                  border-radius: 999px; cursor: pointer; white-space: nowrap; }
+    .new-chat { font-size: 11px; background: rgba(255,255,255,.2); padding: 4px 10px;
+                border-radius: 999px; cursor: pointer; white-space: nowrap; }
+
+    #msgs { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .row { display: flex; }
+    .row.user { justify-content: flex-end; }
+    .bubble { max-width: 80%; padding: 10px 13px; border-radius: 14px; font-size: 14px;
+              line-height: 1.65; word-break: break-word; }
+    .user .bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+    .bot  .bubble { background: #fff; border: 1px solid #eee; border-bottom-left-radius: 4px;
+                    box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .bubble p { margin: 4px 0; } .bubble ul, .bubble ol { margin: 4px 0 4px 18px; }
+    .bubble strong { font-weight: 600; }
+    .bubble table { border-collapse: collapse; margin: 6px 0; font-size: 12px; }
+    .bubble th, .bubble td { border: 1px solid #eee; padding: 4px 8px; }
+    .bubble blockquote { border-left: 3px solid #ddd; color: #888; padding-left: 8px; margin: 6px 0; }
+    .trace { max-width: 80%; font-size: 11px; color: #888; }
+    .trace details { background: #f1f3f0; border-radius: 8px; padding: 5px 10px; }
+    .trace summary { cursor: pointer; user-select: none; }
+    .trace code { color: #5e35b1; }
+    .tool-live { max-width: 80%; font-size: 11px; color: #5e35b1; background: #f3f0fb;
+                 border-radius: 8px; padding: 5px 10px; }
+    .typing { color: #888; font-size: 13px; padding: 2px 16px 8px; display: none; }
+
+    footer { background: #fff; border-top: 1px solid #eee; padding: 10px 12px;
+             padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 8px; }
+    #input { flex: 1; resize: none; border: 1px solid #ddd; border-radius: 12px; padding: 10px 12px;
+             font-size: 14px; font-family: inherit; height: 60px; outline: none; }
+    #input:focus { border-color: var(--primary); }
+    #send { width: 76px; border: none; background: var(--primary); color: #fff;
+            border-radius: 12px; cursor: pointer; font-size: 14px; }
+    #send:disabled { opacity: .5; cursor: not-allowed; }
+    .hint { text-align: center; color: #999; font-size: 12px; padding: 6px; }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <svg class="back-btn" viewBox="0 0 24 24" fill="currentColor" onclick="history.back()">
+    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+  </svg>
+  <h1>AI 智膳助手</h1>
+  <span class="login-chip" id="loginChip" onclick="location.href='login.html'">检查登录态…</span>
+  <span class="new-chat" onclick="newChat()">新对话</span>
+</div>
+
+<div id="msgs">
+  <div class="hint">你好！我是智膳助手 🥗<br>可以解答健康饮食问题、按你的身体数据和偏好推荐菜品。<br>试试："帮我算算 BMI" / "今晚吃点什么好？"</div>
+</div>
+<div class="typing" id="typing">正在连接 Agent 服务…</div>
+
+<footer>
+  <textarea id="input" placeholder="输入问题，Enter 发送"></textarea>
+  <button id="send">发送</button>
+</footer>
+
+<script>
+/* ── Agent 服务地址：优先同源代理 /agent（serve-frontend 已转发到 :8800），失败自动回退直连 ── */
+const AGENT_BASES = ['/agent', 'http://localhost:8800/agent'];
+let agentBase = localStorage.getItem('agent_base') || AGENT_BASES[0];
+
+const LS_SID = 'agent_session_id';
+const $ = id => document.getElementById(id);
+const msgs = $('msgs'), typing = $('typing'), input = $('input'), sendBtn = $('send');
+let sessionId = localStorage.getItem(LS_SID) || null;
+let busy = false;
+let currentUserId = null;
+
+function renderMd(text) {
+  if (window.marked) { try { return marked.parse(text, { breaks: true }); } catch (e) {} }
+  return '<p>' + String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</p>';
+}
+function addBubble(role, html) {
+  const row = document.createElement('div');
+  row.className = 'row ' + role;
+  const b = document.createElement('div'); b.className = 'bubble'; b.innerHTML = html;
+  row.appendChild(b); msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight;
+  return b;
+}
+function addTrace(trace) {
+  if (!trace || !trace.length) return;
+  const row = document.createElement('div'); row.className = 'row bot';
+  const d = document.createElement('details'); d.className = 'trace';
+  d.innerHTML = '<summary>🔧 调用了 ' + trace.length + ' 个工具</summary>' +
+    trace.map(t => '<div><code>' + t.tool + '</code> → ' +
+      String(t.result).replace(/&/g,'&amp;').replace(/</g,'&lt;').slice(0, 150) + '…</div>').join('');
+  row.appendChild(d); msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight;
+}
+function setSession(sid) {
+  sessionId = sid;
+  sid ? localStorage.setItem(LS_SID, sid) : localStorage.removeItem(LS_SID);
+}
+function updateLoginChip(info) {
+  const chip = $('loginChip');
+  if (info && info.id) { currentUserId = info.id; chip.textContent = '👤 ' + (info.nickname || ('用户' + info.id)); }
+  else { currentUserId = null; chip.textContent = '未登录 · 通用模式'; }
+}
+function newChat() {
+  setSession(null); msgs.innerHTML = '';
+  msgs.appendChild(Object.assign(document.createElement('div'),
+    { className: 'hint', textContent: '已开启新对话（服务端旧会话仍保留）' }));
+}
+
+/* ── 会话历史恢复（服务端持久上下文，刷新页面不丢） ── */
+async function restoreHistory() {
+  if (!sessionId) return;
+  for (const base of [agentBase, ...AGENT_BASES.filter(b => b !== agentBase)]) {
+    try {
+      const res = await fetch(base + '/chat/' + sessionId + '/history');
+      if (!res.ok) continue;
+      agentBase = base; localStorage.setItem('agent_base', base);
+      const data = await res.json();
+      (data.messages || []).forEach(m => addBubble(m.role === 'user' ? 'user' : 'bot', renderMd(m.content)));
+      if ((data.messages || []).length) msgs.appendChild(Object.assign(document.createElement('div'),
+        { className: 'hint', textContent: '—— 已恢复上一会话的上下文 ——' }));
+      return;
+    } catch (e) { /* 尝试下一个 base */ }
+  }
+}
+
+/* ── 流式发送：SSE（工具事件 + 回答增量逐字渲染） ── */
+async function send() {
+  if (busy) return;
+  const text = input.value.trim();
+  if (!text) return;
+  busy = true; sendBtn.disabled = true; input.value = '';
+  addBubble('user', renderMd(text));
+  typing.style.display = 'none';
+
+  const headers = { 'Content-Type': 'application/json' };
+  const token = Utils.getToken();
+  if (token) headers['authorization'] = token;   // 透传登录态：Agent 调 Java 接口时携带
+  const body = JSON.stringify({
+    message: text, session_id: sessionId, user_id: currentUserId
+  });
+
+  const bubble = addBubble('bot', '');
+  let live = null, content = '', trace = [], ok = false;
+
+  try {
+    let res = null;
+    for (const base of [agentBase, ...AGENT_BASES.filter(b => b !== agentBase)]) {
+      try {
+        res = await fetch(base + '/chat/stream', { method: 'POST', headers, body });
+        if (res.ok && res.body) { agentBase = base; localStorage.setItem('agent_base', base); break; }
+        res = null;
+      } catch (e) { res = null; }
+    }
+    if (!res) throw new Error('Agent 服务不可达（:8800 未启动？）');
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf('\n\n')) >= 0) {
+        const frame = buf.slice(0, idx); buf = buf.slice(idx + 2);
+        for (const line of frame.split('\n')) {
+          if (!line.startsWith('data:')) continue;
+          let ev; try { ev = JSON.parse(line.slice(5)); } catch (e) { continue; }
+
+          if (ev.type === 'start') { setSession(ev.session_id); }
+          else if (ev.type === 'round') { content = ''; }   // 新一轮工具轮：重置文本缓冲
+          else if (ev.type === 'delta') {
+            content += ev.content;
+            bubble.innerHTML = renderMd(content);
+            msgs.scrollTop = msgs.scrollHeight;
+          }
+          else if (ev.type === 'tool') {
+            trace.push({ tool: ev.name, result: ev.result });
+            if (!live) { live = document.createElement('div'); live.className = 'row bot';
+              live.innerHTML = '<div class="tool-live"></div>'; msgs.appendChild(live); }
+            live.firstChild.textContent = '🔧 ' + ev.name + ' 完成，正在整理结果…';
+            msgs.scrollTop = msgs.scrollHeight;
+          }
+          else if (ev.type === 'done') {
+            ok = true; setSession(sessionId);
+            bubble.innerHTML = renderMd(ev.reply || content);
+            trace = ev.trace || trace;
+            if (live) { live.remove(); live = null; }
+            addTrace(trace);
+          }
+          else if (ev.type === 'error') {
+            if (live) { live.remove(); live = null; }
+            bubble.innerHTML = '<p>⚠️ ' + String(ev.error).replace(/</g,'&lt;') + '</p>';
+            ok = true;
+          }
+        }
+      }
+    }
+    if (!ok && !content) {
+      bubble.innerHTML = '<p>⚠️ 连接中断，请重试。</p>';
+    }
+  } catch (e) {
+    bubble.innerHTML = '<p>⚠️ 请求失败：' + e.message + '<br>请确认 agent-service 已启动（默认 :8800）。</p>';
+  } finally {
+    busy = false; sendBtn.disabled = false; input.focus();
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+}
+
+sendBtn.addEventListener('click', send);
+input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+/* ── 初始化：登录态 → 恢复历史 ── */
+(async function init() {
+  const info = await Utils.fetchUserInfo();   // 有 token 时拉取并缓存用户信息
+  updateLoginChip(info);
+  await restoreHistory();
+  input.focus();
+})();
+</script>
+</body>
+</html>

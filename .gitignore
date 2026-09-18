@@ -66,4 +66,11 @@ deploy/SERVER_ACCESS.local.md
 /out/
 /.workbuddy/
 
+### Python（agent-service）
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
 
