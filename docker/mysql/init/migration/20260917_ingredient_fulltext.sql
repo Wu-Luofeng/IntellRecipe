@@ -15,6 +15,8 @@
 -- 本脚本幂等：通过 information_schema 判断索引是否存在，可安全重复执行。
 -- ---------------------------------------------------------------------------
 
+USE `intell_recipe`;
+
 DROP PROCEDURE IF EXISTS `add_ingredient_fulltext_index`;
 
 DELIMITER $$

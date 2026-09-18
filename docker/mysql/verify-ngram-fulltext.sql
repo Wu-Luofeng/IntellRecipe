@@ -8,6 +8,8 @@
 -- 每项都标注了【期望结果】，不符合就说明对应环节没配好。
 -- ---------------------------------------------------------------------------
 
+USE `intell_recipe`;
+
 -- ① ngram_token_size 必须是 2（与 MysqlFullTextSearchStrategy 的配置一致）
 --    期望：Value = 2
 --    若为 1 或其它值：说明 ngram.cnf 没挂载 / MySQL 没重启，见 docker/mysql/conf/ngram.cnf
