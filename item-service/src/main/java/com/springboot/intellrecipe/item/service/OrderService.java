@@ -30,6 +30,11 @@ public interface OrderService extends IService<TradeOrder> {
     void processOrderCreate(String orderNo);
 
     /**
+     * 瞬时故障判定：MQ 消费者据此决定“延迟重投”还是“拒收进死信 + 订单表补偿”
+     */
+    boolean isTransientFailure(Throwable t);
+
+    /**
      * 查询订单（轮询受理结果：data.status = 处理中/待支付/…）
      */
     TradeOrder queryOrderStatus(Long userId, String orderNo);

@@ -76,6 +76,9 @@ public class TradeOrder implements Serializable {
     /** 下单失败原因（status=5 时填写） */
     private String failReason;
 
+    /** 异步处理重试次数（MQ 消费/补偿失败递增，达上限置失败并释放幂等键） */
+    private Integer retryCount;
+
     private LocalDateTime payTime;
 
     private LocalDateTime finishTime;

@@ -61,4 +61,9 @@ deploy/SERVER_ACCESS.local.md
 /*简历*信息*.txt
 /简历*.txt
 
+### 本地临时产物（刷题代码 / 编译输出 / agent 本地数据）
+/Solution.java
+/out/
+/.workbuddy/
+
 

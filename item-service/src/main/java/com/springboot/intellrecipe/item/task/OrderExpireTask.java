@@ -17,6 +17,8 @@ import java.util.List;
  * D2 修复：待支付订单超时自动关闭。
  * 支付超时（默认 30 分钟）仍未支付的订单自动取消并释放其使用的优惠券，
  * 避免“死单”长期占用与券被一直占用。
+ *
+ * TODO(调度升级路标)：同 OrderCompensateTask——多实例部署先加 ShedLock，任务家族化后迁 xxl-job。
  */
 @Component
 public class OrderExpireTask {

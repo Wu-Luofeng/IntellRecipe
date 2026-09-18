@@ -188,6 +188,7 @@ CREATE TABLE `trade_order` (
   `client_token` varchar(40) DEFAULT NULL COMMENT '结算幂等键（同一结算会话唯一）',
   `status` tinyint NOT NULL DEFAULT 4 COMMENT '4:处理中 0:待支付 1:已支付 2:已完成 3:已取消 5:下单失败',
   `fail_reason` varchar(500) DEFAULT NULL COMMENT '下单失败原因（status=5）',
+  `retry_count` int NOT NULL DEFAULT 0 COMMENT '异步处理重试次数（MQ 消费/补偿失败递增，达上限置失败）',
   `pay_time` datetime DEFAULT NULL COMMENT '支付时间',
   `finish_time` datetime DEFAULT NULL COMMENT '完成时间',
   `cancel_time` datetime DEFAULT NULL COMMENT '取消时间',
