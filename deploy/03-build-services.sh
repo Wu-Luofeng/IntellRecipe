@@ -22,9 +22,10 @@ for module in diet-service intellrecipe-gateway item-service recipe-service user
     cp "${template}" "${yml}"
     echo "Restored ${yml} from application.example.yml"
   elif ! cmp -s "${template}" "${yml}"; then
-    cp "${yml}" "${yml}.bak"
+    # 备份放到 /tmp，不要留在 src/main/resources 下 —— 否则会被 maven 一起打进 jar
+    cp "${yml}" "/tmp/${module}-application.yml.bak-$(date +%Y%m%d-%H%M%S)"
     cp "${template}" "${yml}"
-    echo "Updated ${yml} from application.example.yml (previous version kept as ${yml}.bak)"
+    echo "Updated ${yml} from application.example.yml (previous version backed up to /tmp)"
   fi
 done
 
