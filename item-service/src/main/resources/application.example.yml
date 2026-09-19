@@ -39,10 +39,30 @@ spring:
 # MyBatis Plus Configuration
 mybatis-plus:
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 【不要用 StdOutImpl】它绕过日志框架，把每条 SQL 和完整结果集直接 System.out 打出。
+    # 配合定时任务里的高频查询（EsSyncTask 每 10 秒探测一次），
+    # 几天就能把日志文件刷到 GB 级 —— 实测 5.4GB，几乎全是 SQL 结果集。
+    # Slf4jImpl 交给日志框架统一管控：可按包调级别、有轮转上限。
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
     map-underscore-to-camel-case: true
   global-config:
     db-config:
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+
+# 日志
+logging:
+  level:
+    root: info
+    com.springboot.intellrecipe: info
+    # MyBatis 以 Mapper 接口全限定名作为 logger 名，SQL 明细是 DEBUG 级。
+    # 上面 root=info 已让它不输出；排查 SQL 时把对应 mapper 包临时改成 debug 即可。
+  file:
+    # 由日志框架直接写文件并轮转（不再依赖 nohup 重定向，避免两个句柄写同一文件）
+    name: ${LOG_PATH:./logs}/item-service.log
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+      max-history: 7
+      total-size-cap: 1GB

@@ -40,3 +40,16 @@ deepseek:
   api-key: ${DEEPSEEK_API_KEY:your-api-key-here}
   model: deepseek-chat
   base-url: https://api.deepseek.com
+
+# 日志：由日志框架直接写文件并轮转（不再依赖 nohup 重定向）
+logging:
+  level:
+    root: info
+    com.springboot.intellrecipe: info
+  file:
+    name: ${LOG_PATH:./logs}/recipe-service.log
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+      max-history: 7
+      total-size-cap: 1GB

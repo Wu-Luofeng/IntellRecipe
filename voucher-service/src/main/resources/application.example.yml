@@ -59,10 +59,26 @@ spring:
 # MyBatis Plus Configuration
 mybatis-plus:
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 【不要用 StdOutImpl】它绕过日志框架，把每条 SQL 和完整结果集直接 System.out 打出，
+    # 高频查询场景下日志文件会迅速膨胀到 GB 级。改 Slf4jImpl 交给日志框架统一管控。
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
     map-underscore-to-camel-case: true
   global-config:
     db-config:
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+
+# 日志
+logging:
+  level:
+    root: info
+    com.springboot.intellrecipe: info
+    # SQL 明细是 DEBUG 级，root=info 时不会输出；排查时临时改 debug 即可
+  file:
+    name: ${LOG_PATH:./logs}/voucher-service.log
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+      max-history: 7
+      total-size-cap: 1GB
