@@ -35,9 +35,20 @@ public class IngredientController {
         return Result.ok(ingredientService.search(key));
     }
 
+    /**
+     * 手动触发 ES 同步。
+     * <p>
+     * 默认走变更探测：数据没变就不写 ES（避免无谓的索引写入）。
+     * 需要无条件重写时加 {@code ?force=true} —— 例如 ES 索引被误删、数据损坏，
+     * 此时数据指纹没变但索引确实是空的。
+     */
     @GetMapping("/sync")
-    public Result syncEs() {
-        ingredientService.syncEs();
+    public Result syncEs(@RequestParam(value = "force", required = false, defaultValue = "false") boolean force) {
+        if (force) {
+            ingredientService.syncEsForce();
+        } else {
+            ingredientService.syncEs();
+        }
         return Result.ok();
     }
 

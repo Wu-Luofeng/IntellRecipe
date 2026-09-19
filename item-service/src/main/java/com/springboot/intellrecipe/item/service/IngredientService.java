@@ -26,9 +26,22 @@ public interface IngredientService extends IService<Ingredient> {
     List<IngredientDoc> search(String key);
 
     /**
-     * 同步数据库数据到ES
+     * 同步数据库数据到 ES（带变更探测）。
+     * <p>
+     * 先算一次全表变更指纹，指纹与上次相同就直接返回，<b>不产生任何 ES 写入</b>。
+     * 这是 {@code EsSyncTask} 每 10 秒调用的版本，用来消除无变更时的写入放大。
+     *
+     * @see #syncEsForce()
      */
     void syncEs();
+
+    /**
+     * 强制全量同步到 ES，忽略变更指纹。
+     * <p>
+     * 用于 ES 索引被误删、数据损坏或手工重建索引的场景 ——
+     * 此时指纹没变但索引确实是空的，必须无条件重写一次。
+     */
+    void syncEsForce();
 
     /**
      * 获取今日推荐食材（优先读 Redis 缓存，未命中则实时随机查并回填）
