@@ -150,6 +150,7 @@ CREATE TABLE `voucher_order` (
   `id` bigint(20) NOT NULL COMMENT '订单ID（雪花算法）',
   `user_id` bigint(20) NOT NULL COMMENT '下单用户ID',
   `voucher_id` bigint(20) NOT NULL COMMENT '购买的优惠券ID',
+  `voucher_type` tinyint NOT NULL DEFAULT 0 COMMENT '冗余券类型 0:普通券 1:秒杀券（生成列 dedup_key 依赖）',
   `pay_type` tinyint DEFAULT 1 COMMENT '支付方式 1:余额 2:支付宝 3:微信',
   `status` tinyint DEFAULT 1 COMMENT '订单状态 1:待支付 2:已支付 3:已核销 4:已取消 5:退款中 6:已退款',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '下单时间',
@@ -160,7 +161,9 @@ CREATE TABLE `voucher_order` (
   `used_order_no` varchar(32) DEFAULT NULL COMMENT '关联商城订单号（结算抵现核销）',
   `used_order_id` bigint(20) DEFAULT NULL COMMENT '关联商城订单主键ID',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `dedup_key` varchar(64) GENERATED ALWAYS AS (IF(`voucher_type` = 1, CONCAT(`user_id`, ':', `voucher_id`), NULL)) VIRTUAL COMMENT '秒杀券一人一单去重键（普通券恒 NULL 逃逸唯一索引）',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_seckill_dedup` (`dedup_key`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_voucher_id` (`voucher_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='优惠券订单表';

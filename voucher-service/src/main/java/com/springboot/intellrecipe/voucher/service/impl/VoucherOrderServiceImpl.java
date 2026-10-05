@@ -104,6 +104,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             voucherOrder.setId(voucherOrderDTO.getOrderId());
             voucherOrder.setUserId(userId);
             voucherOrder.setVoucherId(voucherId);
+            // 冗余券类型：秒杀券(1)参与 uk_seckill_dedup 一人一单约束，普通券(0)生成 NULL 逃逸
+            voucherOrder.setVoucherType(type);
             voucherOrder.setPayType(1);
             voucherOrder.setStatus(1);
             voucherOrder.setCreateTime(now);

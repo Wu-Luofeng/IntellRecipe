@@ -25,6 +25,13 @@ public class VoucherOrder implements Serializable {
 
     private Long voucherId;
 
+    /**
+     * 冗余券类型 0:普通券 1:秒杀券（来源于 voucher.type，下单时写入）。
+     * 供生成列 dedup_key 判断：仅秒杀券参与 uk_seckill_dedup 一人一单约束，
+     * 普通券生成 NULL 逃逸唯一索引，支持重复领取。
+     */
+    private Integer voucherType;
+
     private Integer payType;
 
     private Integer status;
