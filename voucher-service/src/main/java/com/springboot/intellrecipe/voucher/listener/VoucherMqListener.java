@@ -6,6 +6,7 @@ import com.springboot.intellrecipe.voucher.config.RabbitConfig;
 import com.springboot.intellrecipe.common.dto.VoucherOrderDTO;
 import com.springboot.intellrecipe.voucher.entity.DeadLetter;
 import com.springboot.intellrecipe.voucher.service.DeadLetterService;
+import com.springboot.intellrecipe.voucher.service.SeckillVoucherService;
 import com.springboot.intellrecipe.voucher.service.VoucherOrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -27,6 +28,9 @@ public class VoucherMqListener {
     private VoucherOrderService voucherOrderService;
 
     @Resource
+    private SeckillVoucherService seckillVoucherService;
+
+    @Resource
     private DeadLetterService deadLetterService;
 
     /**
@@ -46,6 +50,20 @@ public class VoucherMqListener {
             // 消费成功，手动确认 ACK
             channel.basicAck(deliveryTag, false);
             log.info("订单消息消费成功，已发送 ACK: orderId={}", voucherOrderDTO.getOrderId());
+
+        } catch (DuplicateKeyException e) {
+            // 唯一索引冲突（优先于父类 DataIntegrityViolationException 捕获）：
+            //  - uk_seckill_dedup：Redis Set 丢数据后同一用户二次抢购，第二次 Lua
+            //    已多扣一次 Redis 库存 → 归还 +1；DB 侧 deductStock 与 save 同事务，
+            //    异常抛出时已一并回滚，无需处理；Set 不动（用户本就是已购用户）
+            //  - 主键重复：理论上被 createVoucherOrder 开头的 getById 幂等预检挡住，
+            //    到不了这里；即便到达（type=0）也不涉及 Redis 补偿
+            if (Integer.valueOf(1).equals(voucherOrderDTO.getType())) {
+                seckillVoucherService.restoreStock(voucherOrderDTO.getVoucherId());
+            }
+            log.warn("唯一索引拦截重复抢购，Redis 库存已归还: userId={}, voucherId={}, orderId={}",
+                    voucherOrderDTO.getUserId(), voucherOrderDTO.getVoucherId(), voucherOrderDTO.getOrderId());
+            channel.basicAck(deliveryTag, false);
 
         } catch (DataIntegrityViolationException e) {
             // 幂等性处理：捕获到主键重复异常，说明该订单已经处理过了，无需重复处理

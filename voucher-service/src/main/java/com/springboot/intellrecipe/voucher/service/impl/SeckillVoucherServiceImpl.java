@@ -96,4 +96,15 @@ public class SeckillVoucherServiceImpl extends ServiceImpl<SeckillVoucherMapper,
                 .gt("stock", 0)
                 .update();
     }
+
+    @Override
+    public void restoreStock(Long voucherId) {
+        String stockKey = RedisConstants.SECKILL_STOCK_KEY + voucherId;
+        // key 不存在说明 Redis 库存已整体丢失（下次秒杀会从 DB 重新初始化，且 DB
+        // 侧已随事务回滚，值是准的），此时无需补偿，避免 increment 造出错误的 "1"
+        if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(stockKey))) {
+            return;
+        }
+        stringRedisTemplate.opsForValue().increment(stockKey);
+    }
 }
