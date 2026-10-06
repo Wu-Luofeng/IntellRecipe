@@ -148,6 +148,19 @@ public class OrderServiceImpl extends ServiceImpl<TradeOrderMapper, TradeOrder> 
                     return doCreate(userId, selected, dto, null, voucherOrderId, finalShopId);
                 }
             }
+            // 在途券唯一冲突（uk_active_voucher）：同一张券已有在途/待支付订单。
+            // 场景：跨结算会话并发用券（clientToken 不同，上面的幂等分支接不住）。
+            // 不做换号重试——券占用与订单号无关，重试只会二次撞索引。
+            if (voucherOrderId != null) {
+                Long inflight = count(new LambdaQueryWrapper<TradeOrder>()
+                        .eq(TradeOrder::getVoucherOrderId, voucherOrderId)
+                        .in(TradeOrder::getStatus,
+                                TradeOrder.STATUS_PROCESSING, TradeOrder.STATUS_PENDING));
+                if (inflight != null && inflight > 0) {
+                    log.warn("优惠券已被其他在途订单占用。voucherOrderId={}, userId={}", voucherOrderId, userId);
+                    throw new RuntimeException("优惠券已被其他订单占用，请稍后重试或更换优惠券");
+                }
+            }
             // 按 token 查不到 → 才是真正的订单号冲突，重生成再试一次（D4）
             log.warn("订单号唯一冲突，重试生成。userId={}", userId);
             return doCreate(userId, selected, dto, clientToken, voucherOrderId, finalShopId);

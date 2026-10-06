@@ -192,6 +192,7 @@ CREATE TABLE `trade_order` (
   `status` tinyint NOT NULL DEFAULT 4 COMMENT '4:处理中 0:待支付 1:已支付 2:已完成 3:已取消 5:下单失败',
   `fail_reason` varchar(500) DEFAULT NULL COMMENT '下单失败原因（status=5）',
   `retry_count` int NOT NULL DEFAULT 0 COMMENT '异步处理重试次数（MQ 消费/补偿失败递增，达上限置失败）',
+  `active_voucher_key` bigint GENERATED ALWAYS AS (IF(`status` IN (0,4) AND `voucher_order_id` IS NOT NULL, `voucher_order_id`, NULL)) VIRTUAL COMMENT '在途券去重键（终态/无券恒 NULL 逃逸唯一索引）',
   `pay_time` datetime DEFAULT NULL COMMENT '支付时间',
   `finish_time` datetime DEFAULT NULL COMMENT '完成时间',
   `cancel_time` datetime DEFAULT NULL COMMENT '取消时间',
@@ -200,6 +201,7 @@ CREATE TABLE `trade_order` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_order_no` (`order_no`),
   UNIQUE KEY `uk_user_client_token` (`user_id`, `client_token`),
+  UNIQUE KEY `uk_active_voucher` (`active_voucher_key`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_merchant_id` (`merchant_id`),
   KEY `idx_status_time` (`status`, `create_time`)
