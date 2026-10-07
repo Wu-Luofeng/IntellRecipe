@@ -45,7 +45,7 @@ services:
       - "9300:9300"
     volumes:
       - ./es/data:/usr/share/elasticsearch/data
-      # - ./es/plugins:/usr/share/elasticsearch/plugins
+      - ./es/plugins:/usr/share/elasticsearch/plugins   # IK 分词器（版本必须与 ES 镜像一致）
 
   # Kibana 7.17.24 (Temporarily disabled to save memory)
   # kibana:
