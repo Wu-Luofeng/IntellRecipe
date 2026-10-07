@@ -17,15 +17,16 @@ public class IngredientDoc {
 
     /**
      * 食材名称，支持分词搜索
-     * 使用 standard 分词器(单字切分)，无需安装额外插件
+     * 索引用 ik_max_word 细切（"西红柿炒鸡蛋"→西红柿/炒鸡蛋/鸡蛋，最大化召回），
+     * 查询用 ik_smart 粗切（避免查询词被过度拆分，提高精度）
      */
-    @Field(type = FieldType.Text, analyzer = "standard")
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
     private String name;
 
     /**
-     * 食材描述，支持分词搜索
+     * 食材描述，支持分词搜索（与 name 同一 IK 组合）
      */
-    @Field(type = FieldType.Text, analyzer = "standard")
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
     private String description;
 
     /**
