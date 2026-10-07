@@ -66,3 +66,11 @@ logging:
       max-file-size: 100MB
       max-history: 7
       total-size-cap: 1GB
+
+# 搜索链配置
+item:
+  search:
+    # ES 返回空时继续走 ngram/LIKE 兜底。
+    # IK 上线后单字/半截词（如"茄""西红"）在 ES 必然空（索引无此类 token），
+    # 需要落到 MySQL LIKE 恢复模糊容错；代价是"真无结果"的查询多一次 MySQL 查询。
+    fallback-on-empty: true
