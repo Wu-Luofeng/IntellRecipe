@@ -70,7 +70,8 @@ logging:
 # 搜索链配置
 item:
   search:
-    # ES 返回空时继续走 ngram/LIKE 兜底。
-    # IK 上线后单字/半截词（如"茄""西红"）在 ES 必然空（索引无此类 token），
-    # 需要落到 MySQL LIKE 恢复模糊容错；代价是"真无结果"的查询多一次 MySQL 查询。
-    fallback-on-empty: true
+    # ES 空结果不兜底（保持 false）：
+    # 1) LIKE 兜底会让垃圾查询（错字/乱输入/机器人）全部打到 MySQL 全表扫描，是性能入侵；
+    # 2) 单字/半截词需求由前缀联想方案解决（见 docs/项目优化点.md OP-12，走 ES 而非 MySQL）；
+    # 3) 本开关只保留给故障降级场景（ES 熔断/超时走 ngram/LIKE）。
+    fallback-on-empty: false
