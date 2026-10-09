@@ -28,4 +28,11 @@ public interface SeckillVoucherService extends IService<SeckillVoucher> {
      * @param voucherId 优惠券ID
      */
     void restoreStock(Long voucherId);
+
+    /**
+     * 秒杀放弃补偿（原子 Lua）：归还 Redis 库存 +1 并 SREM 已购用户。
+     * 场景：秒杀消息彻底放弃（死信超时/人工确认）时，归还 Lua 已扣的资产，
+     * 让用户可以重新参与抢购。库存 key 不存在时只 SREM（DB 重初始化路径值是准的）。
+     */
+    boolean rollbackSeckill(Long voucherId, Long userId);
 }

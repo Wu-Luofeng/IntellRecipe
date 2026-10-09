@@ -32,10 +32,14 @@ public class SeckillVoucherServiceImpl extends ServiceImpl<SeckillVoucherMapper,
     private RedisIdWorker redisIdWorker;
 
     private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
+    private static final DefaultRedisScript<Long> ROLLBACK_SCRIPT;
     static {
         SECKILL_SCRIPT = new DefaultRedisScript<>();
         SECKILL_SCRIPT.setLocation(new ClassPathResource("lua/seckill.lua"));
         SECKILL_SCRIPT.setResultType(Long.class);
+        ROLLBACK_SCRIPT = new DefaultRedisScript<>();
+        ROLLBACK_SCRIPT.setLocation(new ClassPathResource("lua/seckill_rollback.lua"));
+        ROLLBACK_SCRIPT.setResultType(Long.class);
     }
 
     @Override
@@ -95,6 +99,15 @@ public class SeckillVoucherServiceImpl extends ServiceImpl<SeckillVoucherMapper,
                 .eq("voucher_id", voucherId)
                 .gt("stock", 0)
                 .update();
+    }
+
+    @Override
+    public boolean rollbackSeckill(Long voucherId, Long userId) {
+        Long r = stringRedisTemplate.execute(ROLLBACK_SCRIPT, Collections.emptyList(),
+                voucherId.toString(), userId.toString());
+        org.slf4j.LoggerFactory.getLogger(SeckillVoucherServiceImpl.class)
+                .info("[SeckillRollback] 放弃补偿完成: voucherId={}, userId={}, result={}", voucherId, userId, r);
+        return r != null && r == 1;
     }
 
     @Override

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `tb_dead_letter` (
   `queue_name` varchar(100) DEFAULT NULL COMMENT '死信所在队列',
   `content` text NOT NULL COMMENT '死信消息体内容（JSON格式）',
   `reason` varchar(500) DEFAULT NULL COMMENT '死信原因（异常堆栈或描述）',
-  `status` tinyint(1) DEFAULT '0' COMMENT '处理状态：0-未处理，1-已处理，2-处理失败',
+  `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态 0:未处理 1:已处理 2:处理失败 3:已放弃(已补偿)',
   `retry_count` int(11) DEFAULT '0' COMMENT '重试次数',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '死信发生时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',

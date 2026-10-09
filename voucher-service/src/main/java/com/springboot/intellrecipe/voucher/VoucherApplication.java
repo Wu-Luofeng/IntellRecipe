@@ -4,6 +4,7 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 @EnableDiscoveryClient
 @ComponentScan(basePackages = {"com.springboot.intellrecipe.voucher", "com.springboot.intellrecipe.common"}) // 扫描common包
 @EnableAspectJAutoProxy(exposeProxy = true)
+@EnableScheduling
 public class VoucherApplication {
 
     public static void main(String[] args) {
