@@ -19,6 +19,8 @@ from pathlib import Path
 from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 from app.config import load_config
@@ -61,8 +63,8 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
-    session_id: str | None = None
-    user_id: int | None = None       # 由前端/网关传入（生产应从登录态解析，见 README）
+    session_id: Optional[str] = None
+    user_id: Optional[int] = None       # 由前端/网关传入（生产应从登录态解析，见 README）
     stream: bool = False             # 预留：流式输出
 
 
@@ -73,7 +75,7 @@ class ChatResponse(BaseModel):
 
 
 @app.post("/agent/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest, authorization: str | None = Header(default=None)):
+async def chat(req: ChatRequest, authorization: Optional[str] = Header(default=None)):
     session_id = req.session_id or uuid.uuid4().hex
     ctx = ToolContext(user_id=req.user_id, authorization=authorization)
     result = await app.state.loop.run(session_id, req.message.strip(), ctx)
@@ -82,7 +84,7 @@ async def chat(req: ChatRequest, authorization: str | None = Header(default=None
 
 
 @app.post("/agent/chat/stream")
-async def chat_stream(req: ChatRequest, authorization: str | None = Header(default=None)):
+async def chat_stream(req: ChatRequest, authorization: Optional[str] = Header(default=None)):
     """SSE 流式对话。事件序列：
     start(session_id) → [tool(工具执行完成)...] → delta(回答增量)... → done(reply+trace)
     """

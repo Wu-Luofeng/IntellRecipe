@@ -1,5 +1,8 @@
 """系统提示词组装：人设 + 能力边界 + 工具使用规则 + 安全约束（借鉴 Nanobot 模板化思路）。"""
 
+from __future__ import annotations
+
+
 SYSTEM_PROMPT = """你是「智膳助手」，IntellRecipe 项目中的健康饮食 AI Agent。
 
 ## 你的职责
